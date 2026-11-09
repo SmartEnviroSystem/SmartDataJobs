@@ -62,6 +62,8 @@ public class CreateFlagFileAction extends Action {
                     .add("status", 200)
                     .add("message", "Flag file created successfully")
                     .add("measurementProcessId", measurementId)
+                    //TEST HANAE
+                    .add("finish", true)
                     .add("file_Path", filePath)
                     .build();
 
