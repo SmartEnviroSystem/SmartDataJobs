@@ -23,7 +23,7 @@ public class ActionDocumentation {
         actions.add(new CheckNetAction());
         actions.add(new CommandExecutionAction());
         actions.add(new MailAction());
-        //TEST HANAE
+        //action hinzufungen
         actions.add(new CheckEventTriggers());
         actions.add(new CreateFlagFileAction());
         actions.add(new DeleteDataAction());
