@@ -1,4 +1,4 @@
-# create_tbl_measurement_flag.sql
+-- create_tbl_measurement_flag.sql
 
 -- Ensure the schema exists
 CREATE SCHEMA IF NOT EXISTS smartmonitoring;
