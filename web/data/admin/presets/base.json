@@ -1,29 +1,54 @@
 {
     "list": [
         {
-            "name": "SmartDataJobs Base tables",  
-            "desc": "SmartDataJobs base tables",
-            "version": "06.02.26",
             "state": [
                 {
-                    "name": "datajobs",
-                    "type": "rest",
-                    "method": "defs",
-                    "fromName": "datajobs"
-                },
+                    "fromName": "datajobs", 
+                    "type": "rest", 
+                    "name": "datajobs", 
+                    "method": "defs"
+                }, 
                 {
-                    "name": "datajobs_chain",
-                    "type": "rest",
-                    "method": "defs",
-                    "fromName": "datajobs_chain"
-                },
+                    "fromName": "datajobs_chain", 
+                    "type": "rest", 
+                    "name": "datajobs_chain", 
+                    "method": "defs"
+                }, 
                 {
-                    "name": "datajobs_params",
-                    "type": "rest",
-                    "method": "defs",
-                    "fromName": "datajobs_params"
-                },
+                    "fromName": "datajobs_params", 
+                    "type": "rest", 
+                    "name": "datajobs_params", 
+                    "method": "defs"
+                }, 
                 {
+                    "fromName": "datajobs_log", 
+                    "type": "rest", 
+                    "name": "datajobs_log", 
+                    "method": "defs"
+                }, 
+                {
+                    "fromName": "tbl_measurement_flag", 
+                    "type": "rest", 
+                    "name": "tbl_measurement_flag", 
+                    "method": "defs"
+                }, 
+                {
+                    "fromName": "tbl_eventtrigger", 
+                    "type": "rest", 
+                    "name": "tbl_eventtrigger", 
+                    "method": "defs"
+                }, 
+                {
+                    "fromName": "tbl_deleted_data_log", 
+                    "type": "rest", 
+                    "name": "tbl_deleted_data_log", 
+                    "method": "defs"
+                }, 
+                {
+                    "fromName": "tbl_dataconsolidation_cfg", 
+                    "type": "rest", 
+                    "name": "tbl_dataconsolidation_cfg", 
+                    "method": "defs"
                     "name": "datajobs_log",
                     "type": "rest",
                     "method": "defs",
@@ -35,197 +60,339 @@
                     "method": "defs",
                     "fromName": "datajobs_join_oo"
                 }
-            ],
+            ], 
+            "version": "06.02.26", 
             "collections": [
                 {
-                    "name": "datajobs",
-                    "fromName": "datajobs",
-                    "method": "cdefs",
                     "body": {
-                        "name": "datajobs",
                         "attributes": [
                             {
-                                "isIdentity": true,
-                                "isAutoIncrement": true,
-                                "isNullable": false,
-                                "name": "id",
-                                "type": "bigserial"
-                            },
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
                             {
-                                "name": "name",
-                                "type": "varchar(255)"
-                            },
+                                "type": "varchar(255)", 
+                                "name": "name"
+                            }, 
                             {
-                                "name": "desc",
-                                "type": "varchar(255)"
-                            },
+                                "type": "varchar(255)", 
+                                "name": "desc"
+                            }, 
                             {
-                                "name": "action",
-                                "type": "varchar(255)"
-                            },
+                                "type": "varchar(255)", 
+                                "name": "action"
+                            }, 
                             {
-                                "name": "active",
-                                "type": "bool"
-                            },
+                                "type": "bool", 
+                                "name": "active"
+                            }, 
                             {
-                                "name": "start",
-                                "type": "timestamp"
-                            },
+                                "type": "timestamp", 
+                                "name": "start"
+                            }, 
                             {
-                                "name": "stop",
-                                "type": "timestamp"
-                            },
+                                "type": "timestamp", 
+                                "name": "stop"
+                            }, 
                             {
-                                "name": "repeatsecs",
-                                "type": "int4"
-                            },
+                                "type": "int4", 
+                                "name": "repeatsecs"
+                            }, 
                             {
-                                "name": "priority",
-                                "type": "int4"
+                                "type": "int4", 
+                                "name": "priority"
                             }
-                        ]
-                    }
-                },
+                        ], 
+                        "name": "datajobs"
+                    }, 
+                    "fromName": "datajobs", 
+                    "name": "datajobs", 
+                    "method": "cdefs"
+                }, 
                 {
-                    "name": "datajobs_log",
-                    "fromName": "datajobs_log",
-                    "method": "cdefs",
                     "body": {
-                        "name": "datajobs_log",
                         "attributes": [
                             {
-                                "isIdentity": true,
-                                "isAutoIncrement": true,
-                                "isNullable": false,
-                                "name": "id",
-                                "type": "bigserial"
-                            },
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "datajob_id",
-                                "type": "int8"
-                            },
+                                "type": "int8", 
+                                "isNullable": false, 
+                                "name": "datajob_id"
+                            }, 
                             {
-                                "name": "result",
-                                "type": "text"
-                            },
+                                "type": "text", 
+                                "name": "result"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "ts",
-                                "type": "timestamp",
-                                "default": "now()"
-                            },
+                                "default": "now()", 
+                                "type": "timestamp", 
+                                "isNullable": false, 
+                                "name": "ts"
+                            }, 
                             {
-                                "name": "iserror",
-                                "type": "bool"
-                            },
+                                "type": "bool", 
+                                "name": "iserror"
+                            }, 
                             {
-                                "name": "wastimeout",
-                                "type": "bool"
-                            },
+                                "type": "bool", 
+                                "name": "wastimeout"
+                            }, 
                             {
-                                "name": "processed",
-                                "type": "bool"
+                                "type": "bool", 
+                                "name": "processed"
                             }
-                        ]
-                    }
-                },
+                        ], 
+                        "name": "datajobs_log"
+                    }, 
+                    "fromName": "datajobs_log", 
+                    "name": "datajobs_log", 
+                    "method": "cdefs"
+                }, 
                 {
-                    "name": "datajobs_params",
-                    "fromName": "datajobs_params",
-                    "method": "cdefs",
                     "body": {
-                        "name": "datajobs_params",
                         "attributes": [
                             {
-                                "isIdentity": true,
-                                "isAutoIncrement": true,
-                                "isNullable": false,
-                                "name": "id",
-                                "type": "bigserial"
-                            },
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "key",
-                                "type": "varchar(255)"
-                            },
+                                "type": "varchar(255)", 
+                                "isNullable": false, 
+                                "name": "key"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "value",
-                                "type": "text"
-                            },
+                                "type": "text", 
+                                "isNullable": false, 
+                                "name": "value"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "datajob_id",
-                                "type": "int8",
-
-                                "refName": "datajobs_params_datajobs_fk",
-                                "refAttribute": "id",
-                                "refCollection": "datajobs",
-                                "refStorage": "smartmonitoring",
-                                "refOnDelete": "CASCADE",
-                                "refOnUpdate": "CASCADE"
-                            },
+                                "name": "datajob_id", 
+                                "refOnUpdate": "CASCADE", 
+                                "refOnDelete": "CASCADE", 
+                                "refName": "datajobs_params_datajobs_fk", 
+                                "refStorage": "smartmonitoring", 
+                                "refAttribute": "id", 
+                                "type": "int8", 
+                                "isNullable": false, 
+                                "refCollection": "datajobs"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "type",
-                                "type": "varchar(255)"
+                                "type": "varchar(255)", 
+                                "isNullable": false, 
+                                "name": "type"
                             }
-                        ]
-                    }
-                },
+                        ], 
+                        "name": "datajobs_params"
+                    }, 
+                    "fromName": "datajobs_params", 
+                    "name": "datajobs_params", 
+                    "method": "cdefs"
+                }, 
                 {
-                    "name": "datajobs_chain",
-                    "fromName": "datajobs_chain",
-                    "method": "cdefs",
                     "body": {
-                        "name": "datajobs_chain",
                         "attributes": [
                             {
-                                "isIdentity": true,
-                                "isAutoIncrement": true,
-                                "isNullable": false,
-                                "name": "id",
-                                "type": "bigserial"
-                            },
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "pre_job_id",
-                                "type": "int8",
-                                "refName": "datajobs_chain_datajobs_fk_pre_job",
-                                "refAttribute": "id",
-                                "refCollection": "datajobs",
-                                "refStorage": "smartmonitoring",
-                                "refOnDelete": "CASCADE",
-                                "refOnUpdate": "CASCADE"
-                            },
+                                "name": "pre_job_id", 
+                                "refOnUpdate": "CASCADE", 
+                                "refOnDelete": "CASCADE", 
+                                "refName": "datajobs_chain_datajobs_fk_pre_job", 
+                                "refStorage": "smartmonitoring", 
+                                "refAttribute": "id", 
+                                "type": "int8", 
+                                "isNullable": false, 
+                                "refCollection": "datajobs"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "post_job_id",
-                                "type": "int8",
-                                "refName": "datajobs_chain_datajobs_fk_post_job",
-                                "refAttribute": "id",
-                                "refCollection": "datajobs",
-                                "refStorage": "smartmonitoring",
-                                "refOnDelete": "CASCADE",
-                                "refOnUpdate": "CASCADE"
-                            },
+                                "name": "post_job_id", 
+                                "refOnUpdate": "CASCADE", 
+                                "refOnDelete": "CASCADE", 
+                                "refName": "datajobs_chain_datajobs_fk_post_job", 
+                                "refStorage": "smartmonitoring", 
+                                "refAttribute": "id", 
+                                "type": "int8", 
+                                "isNullable": false, 
+                                "refCollection": "datajobs"
+                            }, 
                             {
-                                "name": "checkkey",
-                                "type": "varchar(255)"
-                            },
+                                "type": "varchar(255)", 
+                                "name": "checkkey"
+                            }, 
                             {
-                                "name": "checkvalue",
-                                "type": "varchar(255)"
-                            },
+                                "type": "varchar(255)", 
+                                "name": "checkvalue"
+                            }, 
                             {
-                                "name": "checkchanged",
-                                "type": "varchar(255)"
-                            },
+                                "type": "varchar(255)", 
+                                "name": "checkchanged"
+                            }, 
                             {
-                                "name": "active",
-                                "type": "bool"
+                                "type": "bool", 
+                                "name": "active"
                             }
+                        ], 
+                        "name": "datajobs_chain"
+                    }, 
+                    "fromName": "datajobs_chain", 
+                    "name": "datajobs_chain", 
+                    "method": "cdefs"
+                }, 
+                {
+                    "body": {
+                        "attributes": [
+                            {
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
+                            {
+                                "type": "varchar(64)", 
+                                "isNullable": false, 
+                                "name": "measurement_process_id"
+                            }, 
+                            {
+                                "type": "varchar(255)", 
+                                "isNullable": false, 
+                                "name": "file_path"
+                            }, 
+                            {
+                                "default": "now()", 
+                                "type": "timestamp", 
+                                "name": "created_at"
+                            }
+                        ], 
+                        "name": "tbl_measurement_flag"
+                    }, 
+                    "fromName": "tbl_measurement_flag", 
+                    "description": "Stores the flag-file information created by CreateFlagFileAction.", 
+                    "name": "tbl_measurement_flag", 
+                    "method": "cdefs"
+                }, 
+                {
+                    "body": {
+                        "attributes": [
+                            {
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
+                            {
+                                "type": "varchar(100)", 
+                                "isNullable": false, 
+                                "name": "trigger_name"
+                            }, 
+                            {
+                                "default": true, 
+                                "type": "bool", 
+                                "name": "active"
+                            }, 
+                            {
+                                "type": "varchar(255)", 
+                                "name": "description"
+                            }
+                        ], 
+                        "name": "tbl_eventtrigger"
+                    }, 
+                    "fromName": "tbl_eventtrigger", 
+                    "description": "List of event-trigger definitions used by CheckEventTriggers.", 
+                    "name": "tbl_eventtrigger", 
+                    "method": "cdefs"
+                }, 
+                {
+                    "body": {
+                        "attributes": [
+                            {
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
+                            {
+                                "default": "now()", 
+                                "type": "timestamp", 
+                                "name": "deleted_at"
+                            }, 
+                            {
+                                "type": "varchar(100)", 
+                                "isNullable": false, 
+                                "name": "table_name"
+                            }, 
+                            {
+                                "type": "int4", 
+                                "isNullable": false, 
+                                "name": "rows_affected"
+                            }, 
+                            {
+                                "type": "text", 
+                                "name": "details"
+                            }
+                        ], 
+                        "name": "tbl_deleted_data_log"
+                    }, 
+                    "fromName": "tbl_deleted_data_log", 
+                    "description": "Audit log for DeleteDataAction - records what data was removed.", 
+                    "name": "tbl_deleted_data_log", 
+                    "method": "cdefs"
+                }, 
+                {
+                    "body": {
+                        "attributes": [
+                            {
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
+                            {
+                                "type": "int8", 
+                                "isNullable": false, 
+                                "name": "owner_user_id"
+                            }, 
+                            {
+                                "type": "varchar(100)", 
+                                "isNullable": false, 
+                                "name": "config_name"
+                            }, 
+                            {
+                                "type": "text", 
+                                "isNullable": false, 
+                                "name": "json_cfg"
+                            }, 
+                            {
+                                "default": "now()", 
+                                "type": "timestamp", 
+                                "name": "created_at"
+                            }
+                        ], 
+                        "name": "tbl_dataconsolidation_cfg"
+                    }, 
+                    "fromName": "tbl_dataconsolidation_cfg", 
+                    "description": "Persisted DataConsolidation UI configuration (JSON).", 
+                    "name": "tbl_dataconsolidation_cfg", 
+                    "method": "cdefs"
                         ]
                     }
                 },
@@ -268,734 +435,736 @@
                         ]
                     }
                 }
-            ]
-        },
+            ], 
+            "name": "SmartDataJobs Base tables", 
+            "desc": "SmartDataJobs base tables"
+        }, 
         {
-            "name": "SmartDataJobs Airquality",  
-            "desc": "SmartDataJobs Airquality sensordata table and job configuration",
-            "version": "06.03.26",
+            "name": "SmartDataJobs Airquality", 
             "state": [
                 {
-                    "name": "sensordata",
-                    "type": "rest",
-                    "method": "defs",
-                    "fromName": "sensordata"
+                    "fromName": "sensordata", 
+                    "type": "rest", 
+                    "name": "sensordata", 
+                    "method": "defs"
                 }
-            ],
+            ], 
+            "version": "06.03.26", 
             "collections": [
                 {
-                    "name": "sensordata",
-                    "fromName": "sensordata",
-                    "method": "cdefs",
                     "body": {
-                        "name": "sensordata",
                         "attributes": [
                             {
-                                "isIdentity": true,
-                                "isAutoIncrement": true,
-                                "isNullable": false,
-                                "name": "id",
-                                "type": "bigserial"
-                            },
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "ts",
-                                "type": "timestamptz",
-                                "default": "now()"
-                            },
+                                "default": "now()", 
+                                "type": "timestamptz", 
+                                "isNullable": false, 
+                                "name": "ts"
+                            }, 
                             {
-                                "name": "temp1",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "temp1"
+                            }, 
                             {
-                                "name": "temp2",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "temp2"
+                            }, 
                             {
-                                "name": "temp3",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "temp3"
+                            }, 
                             {
-                                "name": "pm2_5",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "pm2_5"
+                            }, 
                             {
-                                "name": "pm10_0",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "pm10_0"
+                            }, 
                             {
-                                "name": "pos",
-                                "type": "geometry"
-                            },
+                                "type": "geometry", 
+                                "name": "pos"
+                            }, 
                             {
-                                "name": "pos_accuracy",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "pos_accuracy"
+                            }, 
                             {
-                                "name": "pos_altitude",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "pos_altitude"
+                            }, 
                             {
-                                "name": "pos_altitude_accuracy",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "pos_altitude_accuracy"
+                            }, 
                             {
-                                "name": "pos_heading",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "pos_heading"
+                            }, 
                             {
-                                "name": "pos_speed",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "pos_speed"
+                            }, 
                             {
-                                "name": "inn_temp",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "inn_temp"
+                            }, 
                             {
-                                "name": "inn_pres",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "inn_pres"
+                            }, 
                             {
-                                "name": "inn_hum",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "inn_hum"
+                            }, 
                             {
-                                "name": "co2",
-                                "type": "float8"
-                            },
+                                "type": "float8", 
+                                "name": "co2"
+                            }, 
                             {
-                                "name": "measurement_process",
-                                "type": "timestamp"
-                            },
+                                "type": "timestamp", 
+                                "name": "measurement_process"
+                            }, 
                             {
-                                "name": "measurement_name",
-                                "type": "varchar(30)"
-                            },
+                                "type": "varchar(30)", 
+                                "name": "measurement_name"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "synced",
-                                "type": "bool",
-                                "default": false
+                                "default": false, 
+                                "type": "bool", 
+                                "isNullable": false, 
+                                "name": "synced"
                             }
-                        ]
-                    }
-                },
+                        ], 
+                        "name": "sensordata"
+                    }, 
+                    "fromName": "sensordata", 
+                    "name": "sensordata", 
+                    "method": "cdefs"
+                }, 
                 {
-                    "name": "label_timed",
-                    "fromName": "label_timed",
-                    "method": "cdefs",
                     "body": {
-                        "name": "label_timed",
                         "attributes": [
                             {
-                                "isIdentity": true,
-                                "isAutoIncrement": true,
-                                "isNullable": false,
-                                "name": "id",
-                                "type": "bigserial"
-                            },
+                                "type": "bigserial", 
+                                "isAutoIncrement": true, 
+                                "isIdentity": true, 
+                                "isNullable": false, 
+                                "name": "id"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "ts",
-                                "type": "timestamptz",
-                                "default": "now()"
-                            },
+                                "default": "now()", 
+                                "type": "timestamptz", 
+                                "isNullable": false, 
+                                "name": "ts"
+                            }, 
                             {
-                                "isNullable": false,
-                                "name": "label",
-                                "type": "int4"
+                                "type": "int4", 
+                                "isNullable": false, 
+                                "name": "label"
                             }
-                        ]
-                    }
+                        ], 
+                        "name": "label_timed"
+                    }, 
+                    "fromName": "label_timed", 
+                    "name": "label_timed", 
+                    "method": "cdefs"
                 }
-            ],
+            ], 
             "data": [
                 {
-                    "name": "datajobs",
-                    "fromName": "datajobs",
-                    "method": "create",
-                    "version": "0.4 Beta 1",
                     "body": [
                         {
-                            "id": 1,
-                            "name": "getBME280Data",
-                            "desc": "Gets the BME280 sensor data (Air temperature, pressure, humidity)",
-                            "action": "CommandExecution",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.201Z",
-                            "stop": null,
-                            "repeatsecs": 25,
-                            "priority": 1
-                        },
+                            "name": "getBME280Data", 
+                            "start": "2025-07-01T08:00:00.201Z", 
+                            "repeatsecs": 25, 
+                            "stop": null, 
+                            "priority": 1, 
+                            "active": false, 
+                            "action": "CommandExecution", 
+                            "id": 1, 
+                            "desc": "Gets the BME280 sensor data (Air temperature, pressure, humidity)"
+                        }, 
                         {
-                            "id": 2,
-                            "name": "getDS18B20Data",
-                            "desc": "Gets the ds18b20 sensor data (Temperature)",
-                            "action": "CommandExecution",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.201Z",
-                            "stop": null,
-                            "repeatsecs": 25,
-                            "priority": 1
-                        },
+                            "name": "getDS18B20Data", 
+                            "start": "2025-07-01T08:00:00.201Z", 
+                            "repeatsecs": 25, 
+                            "stop": null, 
+                            "priority": 1, 
+                            "active": false, 
+                            "action": "CommandExecution", 
+                            "id": 2, 
+                            "desc": "Gets the ds18b20 sensor data (Temperature)"
+                        }, 
                         {
-                            "id": 3,
-                            "name": "getSDS011Data",
-                            "desc": "Gets the SDS011 sensor data (Fine dust)",
-                            "action": "CommandExecution",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.201Z",
-                            "stop": null,
-                            "repeatsecs": 25,
-                            "priority": 1
-                        },
+                            "name": "getSDS011Data", 
+                            "start": "2025-07-01T08:00:00.201Z", 
+                            "repeatsecs": 25, 
+                            "stop": null, 
+                            "priority": 1, 
+                            "active": false, 
+                            "action": "CommandExecution", 
+                            "id": 3, 
+                            "desc": "Gets the SDS011 sensor data (Fine dust)"
+                        }, 
                         {
-                            "id": 4,
-                            "name": "getT6613Data",
-                            "desc": "Gets the T6613 sensor data (Co2)",
-                            "action": "CommandExecution",
-                            "active": false,
-                            "start": "2025-06-18T14:55:00.201Z",
-                            "stop": null,
-                            "repeatsecs": 25,
-                            "priority": 1
-                        },
+                            "name": "getT6613Data", 
+                            "start": "2025-06-18T14:55:00.201Z", 
+                            "repeatsecs": 25, 
+                            "stop": null, 
+                            "priority": 1, 
+                            "active": false, 
+                            "action": "CommandExecution", 
+                            "id": 4, 
+                            "desc": "Gets the T6613 sensor data (Co2)"
+                        }, 
                         {
-                            "id": 5,
-                            "name": "getGPSData",
-                            "desc": "Gets the GPS data from smartphone or gps stick",
-                            "action": "CommandExecution",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.201Z",
-                            "stop": null,
-                            "repeatsecs": 25,
-                            "priority": 1
-                        },
+                            "name": "getGPSData", 
+                            "start": "2025-07-01T08:00:00.201Z", 
+                            "repeatsecs": 25, 
+                            "stop": null, 
+                            "priority": 1, 
+                            "active": false, 
+                            "action": "CommandExecution", 
+                            "id": 5, 
+                            "desc": "Gets the GPS data from smartphone or gps stick"
+                        }, 
                         {
-                            "id": 6,
-                            "name": "getAggregatedData",
-                            "desc": "Collects data from log for table sensordata",
-                            "action": "ReadData",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.507Z",
-                            "stop": null,
-                            "repeatsecs": 45,
-                            "priority": 0
-                        },
+                            "name": "getAggregatedData", 
+                            "start": "2025-07-01T08:00:00.507Z", 
+                            "repeatsecs": 45, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "ReadData", 
+                            "id": 6, 
+                            "desc": "Collects data from log for table sensordata"
+                        }, 
                         {
-                            "id": 7,
-                            "name": "writeSensorDataLocal",
-                            "desc": "Sends collected data to table sensordata",
-                            "action": "WriteData",
-                            "active": false,
-                            "stop": null,
-                            "priority": 0
-                        },
+                            "name": "writeSensorDataLocal", 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "WriteData", 
+                            "id": 7, 
+                            "desc": "Sends collected data to table sensordata"
+                        }, 
                         {
-                            "id": 8,
-                            "name": "checkHSBIServer",
-                            "desc": "Checks if the HSBI server is reachable",
-                            "action": "CheckNet",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.507Z",
-                            "stop": null,
-                            "repeatsecs": 65,
-                            "priority": 0
-                        },
+                            "name": "checkHSBIServer", 
+                            "start": "2025-07-01T08:00:00.507Z", 
+                            "repeatsecs": 65, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "CheckNet", 
+                            "id": 8, 
+                            "desc": "Checks if the HSBI server is reachable"
+                        }, 
                         {
-                            "id": 9,
-                            "name": "getSensorsDataLocal",
-                            "desc": "Get local saved sensors data for sending to HSBI server",
-                            "action": "ReadData",
-                            "active": false,
-                            "start": null,
-                            "stop": null,
-                            "repeatsecs": null,
-                            "priority": 0
-                        },
+                            "name": "getSensorsDataLocal", 
+                            "start": null, 
+                            "repeatsecs": null, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "ReadData", 
+                            "id": 9, 
+                            "desc": "Get local saved sensors data for sending to HSBI server"
+                        }, 
                         {
-                            "id": 10,
-                            "name": "writeSensorData",
-                            "desc": "Sends data to HSBI Server",
-                            "action": "WriteData",
-                            "active": false,
-                            "start": null,
-                            "stop": null,
-                            "repeatsecs": null,
-                            "priority": 0
-                        },
+                            "name": "writeSensorData", 
+                            "start": null, 
+                            "repeatsecs": null, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "WriteData", 
+                            "id": 10, 
+                            "desc": "Sends data to HSBI Server"
+                        }, 
                         {
-                            "id": 11,
-                            "name": "getAllSensors",
-                            "desc": "Gets data from all connected sensors",
-                            "action": "CommandExecution",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.507Z",
-                            "stop": null,
-                            "repeatsecs": null,
-                            "priority": 1
-                        },
+                            "name": "getAllSensors", 
+                            "start": "2025-07-01T08:00:00.507Z", 
+                            "repeatsecs": null, 
+                            "stop": null, 
+                            "priority": 1, 
+                            "active": false, 
+                            "action": "CommandExecution", 
+                            "id": 11, 
+                            "desc": "Gets data from all connected sensors"
+                        }, 
                         {
-                            "id": 12,
-                            "name": "getMeasurementID",
-                            "desc": "Gets the measurement ID (MAC_DATE_Nr)",
-                            "action": "CommandExecution",
-                            "active": false,
-                            "start": "2025-07-01T08:00:00.507Z",
-                            "stop": null,
-                            "repeatsecs": 25,
-                            "priority": 1
-                        },
+                            "name": "getMeasurementID", 
+                            "start": "2025-07-01T08:00:00.507Z", 
+                            "repeatsecs": 25, 
+                            "stop": null, 
+                            "priority": 1, 
+                            "active": false, 
+                            "action": "CommandExecution", 
+                            "id": 12, 
+                            "desc": "Gets the measurement ID (MAC_DATE_Nr)"
+                        }, 
                         {
-                            "id": 14,
-                            "name": "sendResponseAfterSynchronisation",
-                            "desc": "Sends a Response to identify, when the synchronisation process is finished",
-                            "action": "WriteData",
-                            "active": false,
-                            "start": null,
-                            "stop": null,
-                            "repeatsecs": null,
-                            "priority": 0
-                        },
+                            "name": "sendResponseAfterSynchronisation", 
+                            "start": null, 
+                            "repeatsecs": null, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "WriteData", 
+                            "id": 14, 
+                            "desc": "Sends a Response to identify, when the synchronisation process is finished"
+                        }, 
                         {
-                            "id": 15,
-                            "name": "createFlagFileAction",
-                            "desc": "Create file with measurement id",
-                            "action": "CreateFlagFile",
-                            "active": false,
-                            "start": null,
-                            "stop": null,
-                            "repeatsecs": null,
-                            "priority": 0
-                        },
+                            "name": "createFlagFileAction", 
+                            "start": null, 
+                            "repeatsecs": null, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "CreateFlagFile", 
+                            "id": 15, 
+                            "desc": "Create file with measurement id"
+                        }, 
                         {
-                            "id": 16,
-                            "name": "deleteDataSensorData",
-                            "desc": "Delete all data that are synchd and old then 14 days",
-                            "action": "DeleteData",
-                            "active": false,
-                            "start": null,
-                            "stop": null,
-                            "repeatsecs": null,
-                            "priority": 0
-                        },
+                            "name": "deleteDataSensorData", 
+                            "start": null, 
+                            "repeatsecs": null, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "DeleteData", 
+                            "id": 16, 
+                            "desc": "Delete all data that are synchd and old then 14 days"
+                        }, 
                         {
-                            "id": 17,
-                            "name": "deleteDataJobsLog",
-                            "desc": "Delete all data that are processed and old then 14 days",
-                            "action": "DeleteData",
-                            "active": false,
-                            "start": null,
-                            "stop": null,
-                            "repeatsecs": null,
-                            "priority": 0
+                            "name": "deleteDataJobsLog", 
+                            "start": null, 
+                            "repeatsecs": null, 
+                            "stop": null, 
+                            "priority": 0, 
+                            "active": false, 
+                            "action": "DeleteData", 
+                            "id": 17, 
+                            "desc": "Delete all data that are processed and old then 14 days"
                         }
-                    ]
-                },
+                    ], 
+                    "fromName": "datajobs", 
+                    "version": "0.4 Beta 1", 
+                    "name": "datajobs", 
+                    "method": "create"
+                }, 
                 {
-                    "name": "datajobs_chain",
-                    "fromName": "datajobs_chain",
-                    "method": "create",
                     "body": [
                         {
-                            "id": 1,
-                            "pre_job_id": 6,
-                            "post_job_id": 7,
-                            "checkkey": "state",
-                            "checkvalue": "finished",
-                            "active": true
-                        },
+                            "checkvalue": "finished", 
+                            "pre_job_id": 6, 
+                            "checkkey": "state", 
+                            "post_job_id": 7, 
+                            "active": true, 
+                            "id": 1
+                        }, 
                         {
-                            "id": 2,
-                            "pre_job_id": 8,
-                            "post_job_id": 9,
-                            "checkkey": "state",
-                            "checkvalue": "finished",
-                            "active": true
-                        },
+                            "checkvalue": "finished", 
+                            "pre_job_id": 8, 
+                            "checkkey": "state", 
+                            "post_job_id": 9, 
+                            "active": true, 
+                            "id": 2
+                        }, 
                         {
-                            "id": 3,
-                            "pre_job_id": 9,
-                            "post_job_id": 10,
-                            "checkkey": "state",
-                            "checkvalue": "finished",
-                            "active": true
-                        },
+                            "checkvalue": "finished", 
+                            "pre_job_id": 9, 
+                            "checkkey": "state", 
+                            "post_job_id": 10, 
+                            "active": true, 
+                            "id": 3
+                        }, 
                         {
-                            "id": 4,
-                            "pre_job_id": 10,
-                            "post_job_id": 14,
-                            "checkkey": "httpStatus",
-                            "checkvalue": "200",
-                            "active": true
+                            "checkvalue": "200", 
+                            "pre_job_id": 10, 
+                            "checkkey": "httpStatus", 
+                            "post_job_id": 14, 
+                            "active": true, 
+                            "id": 4
                         }
-                    ]
-                },
+                    ], 
+                    "fromName": "datajobs_chain", 
+                    "name": "datajobs_chain", 
+                    "method": "create"
+                }, 
                 {
-                    "name": "datajobs_params",
-                    "fromName": "datajobs_params",
-                    "method": "create",
                     "body": [
                         {
-                            "id": 1,
-                            "key": "command",
-                            "value": "python",
-                            "datajob_id": 1,
-                            "type": "string"
-                        },
+                            "value": "python", 
+                            "type": "string", 
+                            "id": 1, 
+                            "key": "command", 
+                            "datajob_id": 1
+                        }, 
                         {
-                            "id": 2,
-                            "key": "parameter",
-                            "value": "\/home\/pi\/payara\/scripts\/bme280.py",
-                            "datajob_id": 1,
-                            "type": "string"
-                        },
+                            "value": "/home/pi/payara/scripts/bme280.py", 
+                            "type": "string", 
+                            "id": 2, 
+                            "key": "parameter", 
+                            "datajob_id": 1
+                        }, 
                         {
-                            "id": 3,
-                            "key": "command",
-                            "value": "python",
-                            "datajob_id": 2,
-                            "type": "string"
-                        },
+                            "value": "python", 
+                            "type": "string", 
+                            "id": 3, 
+                            "key": "command", 
+                            "datajob_id": 2
+                        }, 
                         {
-                            "id": 4,
-                            "key": "parameter",
-                            "value": "\/home\/pi\/payara\/scripts\/ds18b20.py",
-                            "datajob_id": 2,
-                            "type": "string"
-                        },
+                            "value": "/home/pi/payara/scripts/ds18b20.py", 
+                            "type": "string", 
+                            "id": 4, 
+                            "key": "parameter", 
+                            "datajob_id": 2
+                        }, 
                         {
-                            "id": 5,
-                            "key": "command",
-                            "value": "python",
-                            "datajob_id": 3,
-                            "type": "string"
-                        },
+                            "value": "python", 
+                            "type": "string", 
+                            "id": 5, 
+                            "key": "command", 
+                            "datajob_id": 3
+                        }, 
                         {
-                            "id": 6,
-                            "key": "parameter",
-                            "value": "\/home\/pi\/payara\/scripts\/sds011.py",
-                            "datajob_id": 3,
-                            "type": "string"
-                        },
+                            "value": "/home/pi/payara/scripts/sds011.py", 
+                            "type": "string", 
+                            "id": 6, 
+                            "key": "parameter", 
+                            "datajob_id": 3
+                        }, 
                         {
-                            "id": 9,
-                            "key": "command",
-                            "value": "python",
-                            "datajob_id": 5,
-                            "type": "string"
-                        },
+                            "value": "python", 
+                            "type": "string", 
+                            "id": 9, 
+                            "key": "command", 
+                            "datajob_id": 5
+                        }, 
                         {
-                            "id": 10,
-                            "key": "parameter",
-                            "value": "\/home\/pi\/payara\/scripts\/gps.py",
-                            "datajob_id": 5,
-                            "type": "string"
-                        },
+                            "value": "/home/pi/payara/scripts/gps.py", 
+                            "type": "string", 
+                            "id": 10, 
+                            "key": "parameter", 
+                            "datajob_id": 5
+                        }, 
                         {
-                            "id": 11,
-                            "key": "url",
-                            "value": "http:\/\/localhost:8080\/SmartDataLyser\/smartdatalyser\/aggregation\/temporalcluster",
-                            "datajob_id": 6,
-                            "type": "url"
-                        },
+                            "value": "http://localhost:8080/SmartDataLyser/smartdatalyser/aggregation/temporalcluster", 
+                            "type": "url", 
+                            "id": 11, 
+                            "key": "url", 
+                            "datajob_id": 6
+                        }, 
                         {
-                            "id": 12,
-                            "key": "requestmethod",
-                            "value": "POST",
-                            "datajob_id": 6,
-                            "type": "string"
-                        },
+                            "value": "POST", 
+                            "type": "string", 
+                            "id": 12, 
+                            "key": "requestmethod", 
+                            "datajob_id": 6
+                        }, 
                         {
-                            "id": 13,
-                            "key": "body",
-                            "value": "{\r\n  \"date_attr\": \"ts\",\r\n  \"cluster_seconds\": 30,\r\n  \"processed_attr\": \"processed\",\r\n  \"mapping\": {\r\n    \"inn_temp\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/temperature_celsius\",\r\n\t\t\"target_attr\": \"inn_temp\"\r\n\t},\r\n\t\"inn_hum\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/humidity_percent\",\r\n\t\t\"target_attr\": \"inn_hum\"\r\n\t},\r\n\t\"inn_pres\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/pressure_hPa\",\r\n\t\t\"target_attr\": \"inn_pres\"\r\n\t},\r\n\t\"temp1\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/sensors\/0\/values\/temperature_celsius\",\r\n\t\t\"target_attr\": \"temp1\"\r\n\t},\r\n\t\"temp2\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/sensors\/1\/values\/temperature_celsius\",\r\n\t\t\"target_attr\": \"temp2\"\r\n\t},\r\n    \"temp3\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/sensors\/2\/values\/temperature_celsius\",\r\n\t\t\"target_attr\": \"temp3\"\r\n\t},\r\n\t\"pm2_5\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/pm2.5\",\r\n\t\t\"target_attr\": \"pm2_5\"\r\n\t},\r\n\t\"pm10_0\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/pm10.0\",\r\n\t\t\"target_attr\": \"pm10_0\"\r\n\t},\r\n\t\"pos\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/wkt\",\r\n\t\t\"target_attr\": \"pos\"\r\n\t},\r\n\t\"pos_altitude\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/altitude\",\r\n\t\t\"target_attr\": \"pos_altitude\"\r\n\t},\r\n\t\"pos_heading\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/course_deg\",\r\n\t\t\"target_attr\": \"pos_heading\"\r\n\t},\r\n\t\"pos_speed\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/speed_kmh\",\r\n\t\t\"target_attr\": \"pos_speed\"\r\n\t},\r\n\t\"co2\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"\/records\/0\/values\/co2_ppm\",\r\n\t\t\"target_attr\": \"co2\"\r\n\t},\r\n\t\"measurement_process\": {\r\n\t    \"source_attr\": \"result\",\r\n\t    \"source_pointer\": \"\/records\/0\/values\/measurementProcessId\",\r\n\t    \"target_attr\": \"measurement_process\"\r\n\t},\r\n\t\"measurement_name\": {\r\n\t    \"source_attr\": \"result\",\r\n\t    \"source_pointer\": \"\/records\/0\/values\/measurementProcessName\",\r\n\t    \"target_attr\": \"measurement_name\"\r\n\t}\r\n  },\r\n  \"datasources\": [\r\n    {\r\n      \"name\": \"datajobs_log\",\r\n      \"smartdataurl\": \"\/SmartData\",\r\n      \"collection\": \"datajobs_log\",\r\n      \"storage\": \"smartmonitoring\",\r\n      \"dateattribute\": \"ts\",\r\n      \"filter\": [\"datajob_id,in,1,2,3,4,5,12&filter=processed,eq,false\"],\r\n      \"limit\": 100\r\n    }\r\n  ]\r\n}\r\n\r\n",
-                            "datajob_id": 6,
-                            "type": "string"
-                        },
+                            "value": "{\r\n  \"date_attr\": \"ts\",\r\n  \"cluster_seconds\": 30,\r\n  \"processed_attr\": \"processed\",\r\n  \"mapping\": {\r\n    \"inn_temp\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/temperature_celsius\",\r\n\t\t\"target_attr\": \"inn_temp\"\r\n\t},\r\n\t\"inn_hum\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/humidity_percent\",\r\n\t\t\"target_attr\": \"inn_hum\"\r\n\t},\r\n\t\"inn_pres\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/pressure_hPa\",\r\n\t\t\"target_attr\": \"inn_pres\"\r\n\t},\r\n\t\"temp1\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/sensors/0/values/temperature_celsius\",\r\n\t\t\"target_attr\": \"temp1\"\r\n\t},\r\n\t\"temp2\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/sensors/1/values/temperature_celsius\",\r\n\t\t\"target_attr\": \"temp2\"\r\n\t},\r\n    \"temp3\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/sensors/2/values/temperature_celsius\",\r\n\t\t\"target_attr\": \"temp3\"\r\n\t},\r\n\t\"pm2_5\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/pm2.5\",\r\n\t\t\"target_attr\": \"pm2_5\"\r\n\t},\r\n\t\"pm10_0\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/pm10.0\",\r\n\t\t\"target_attr\": \"pm10_0\"\r\n\t},\r\n\t\"pos\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/wkt\",\r\n\t\t\"target_attr\": \"pos\"\r\n\t},\r\n\t\"pos_altitude\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/altitude\",\r\n\t\t\"target_attr\": \"pos_altitude\"\r\n\t},\r\n\t\"pos_heading\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/course_deg\",\r\n\t\t\"target_attr\": \"pos_heading\"\r\n\t},\r\n\t\"pos_speed\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/speed_kmh\",\r\n\t\t\"target_attr\": \"pos_speed\"\r\n\t},\r\n\t\"co2\": {\r\n\t\t\"source_attr\": \"result\",\r\n\t\t\"source_pointer\": \"/records/0/values/co2_ppm\",\r\n\t\t\"target_attr\": \"co2\"\r\n\t},\r\n\t\"measurement_process\": {\r\n\t    \"source_attr\": \"result\",\r\n\t    \"source_pointer\": \"/records/0/values/measurementProcessId\",\r\n\t    \"target_attr\": \"measurement_process\"\r\n\t},\r\n\t\"measurement_name\": {\r\n\t    \"source_attr\": \"result\",\r\n\t    \"source_pointer\": \"/records/0/values/measurementProcessName\",\r\n\t    \"target_attr\": \"measurement_name\"\r\n\t}\r\n  },\r\n  \"datasources\": [\r\n    {\r\n      \"name\": \"datajobs_log\",\r\n      \"smartdataurl\": \"/SmartData\",\r\n      \"collection\": \"datajobs_log\",\r\n      \"storage\": \"smartmonitoring\",\r\n      \"dateattribute\": \"ts\",\r\n      \"filter\": [\"datajob_id,in,1,2,3,4,5,12&filter=processed,eq,false\"],\r\n      \"limit\": 100\r\n    }\r\n  ]\r\n}\r\n\r\n", 
+                            "type": "string", 
+                            "id": 13, 
+                            "key": "body", 
+                            "datajob_id": 6
+                        }, 
                         {
-                            "id": 14,
-                            "key": "url",
-                            "value": "http:\/\/localhost:8080\/SmartData\/smartdata\/records\/sensordata",
-                            "datajob_id": 7,
-                            "type": "url"
-                        },
+                            "value": "http://localhost:8080/SmartData/smartdata/records/sensordata", 
+                            "type": "url", 
+                            "id": 14, 
+                            "key": "url", 
+                            "datajob_id": 7
+                        }, 
                         {
-                            "id": 15,
-                            "key": "requestmethod",
-                            "value": "POST",
-                            "datajob_id": 7,
-                            "type": "string"
-                        },
+                            "value": "POST", 
+                            "type": "string", 
+                            "id": 15, 
+                            "key": "requestmethod", 
+                            "datajob_id": 7
+                        }, 
                         {
-                            "id": 16,
-                            "key": "urlparams",
-                            "value": "{\r\n\t\"storage\": \"smartmonitoring\",\r\n\t\"collection\": \"sensordata\"\r\n}",
-                            "datajob_id": 7,
-                            "type": "string"
-                        },
+                            "value": "{\r\n\t\"storage\": \"smartmonitoring\",\r\n\t\"collection\": \"sensordata\"\r\n}", 
+                            "type": "string", 
+                            "id": 16, 
+                            "key": "urlparams", 
+                            "datajob_id": 7
+                        }, 
                         {
-                            "id": 17,
-                            "key": "prejobfield",
-                            "value": "records",
-                            "datajob_id": 7,
-                            "type": "string"
-                        },
+                            "value": "records", 
+                            "type": "string", 
+                            "id": 17, 
+                            "key": "prejobfield", 
+                            "datajob_id": 7
+                        }, 
                         {
-                            "id": 18,
-                            "key": "smartdataurl",
-                            "value": "http:\/\/localhost:8080\/SmartData",
-                            "datajob_id": 7,
-                            "type": "string"
-                        },
+                            "value": "http://localhost:8080/SmartData", 
+                            "type": "string", 
+                            "id": 18, 
+                            "key": "smartdataurl", 
+                            "datajob_id": 7
+                        }, 
                         {
-                            "id": 19,
-                            "key": "url",
-                            "value": "https:\/\/scl.fh-bielefeld.de\/SmartDataAirquality\/smartdata\/records\/sensor_{mac}?storage=smartmonitoring",
-                            "datajob_id": 8,
-                            "type": "url"
-                        },
+                            "value": "https://scl.fh-bielefeld.de/SmartDataAirquality/smartdata/records/sensor_{mac}?storage=smartmonitoring", 
+                            "type": "url", 
+                            "id": 19, 
+                            "key": "url", 
+                            "datajob_id": 8
+                        }, 
                         {
-                            "id": 20,
-                            "key": "statuscode",
-                            "value": "200",
-                            "datajob_id": 8,
-                            "type": "int"
-                        },
+                            "value": "200", 
+                            "type": "int", 
+                            "id": 20, 
+                            "key": "statuscode", 
+                            "datajob_id": 8
+                        }, 
                         {
-                            "id": 21,
-                            "key": "requestmethod",
-                            "value": "GET",
-                            "datajob_id": 8,
-                            "type": "string"
-                        },
+                            "value": "GET", 
+                            "type": "string", 
+                            "id": 21, 
+                            "key": "requestmethod", 
+                            "datajob_id": 8
+                        }, 
                         {
-                            "id": 22,
-                            "key": "url",
-                            "value": "http:\/\/localhost:8080\/SmartData\/smartdata\/records\/sensordata",
-                            "datajob_id": 9,
-                            "type": "url"
-                        },
+                            "value": "http://localhost:8080/SmartData/smartdata/records/sensordata", 
+                            "type": "url", 
+                            "id": 22, 
+                            "key": "url", 
+                            "datajob_id": 9
+                        }, 
                         {
-                            "id": 23,
-                            "key": "smartdataurl",
-                            "value": "http:\/\/localhost:8080\/SmartData",
-                            "datajob_id": 9,
-                            "type": "url"
-                        },
+                            "value": "http://localhost:8080/SmartData", 
+                            "type": "url", 
+                            "id": 23, 
+                            "key": "smartdataurl", 
+                            "datajob_id": 9
+                        }, 
                         {
-                            "id": 24,
-                            "key": "requestmethod",
-                            "value": "GET",
-                            "datajob_id": 9,
-                            "type": "string"
-                        },
+                            "value": "GET", 
+                            "type": "string", 
+                            "id": 24, 
+                            "key": "requestmethod", 
+                            "datajob_id": 9
+                        }, 
                         {
-                            "id": 25,
-                            "key": "urlparams",
-                            "value": "{\r\n   \"storage\": \"smartmonitoring\",\r\n\t\"filter\": \"synced,eq,false\",\r\n\t\"collection\": \"sensordata\",\r\n\t\"order\": \"ts,DESC\"\r\n}",
-                            "datajob_id": 9,
-                            "type": "string"
-                        },
+                            "value": "{\r\n   \"storage\": \"smartmonitoring\",\r\n\t\"filter\": \"synced,eq,false\",\r\n\t\"collection\": \"sensordata\",\r\n\t\"order\": \"ts,DESC\"\r\n}", 
+                            "type": "string", 
+                            "id": 25, 
+                            "key": "urlparams", 
+                            "datajob_id": 9
+                        }, 
                         {
-                            "id": 26,
-                            "key": "url",
-                            "value": "https:\/\/scl.fh-bielefeld.de\/SmartDataAirquality\/smartdata\/records\/sensor_{mac}?storage=smartmonitoring",
-                            "datajob_id": 10,
-                            "type": "url"
-                        },
+                            "value": "https://scl.fh-bielefeld.de/SmartDataAirquality/smartdata/records/sensor_{mac}?storage=smartmonitoring", 
+                            "type": "url", 
+                            "id": 26, 
+                            "key": "url", 
+                            "datajob_id": 10
+                        }, 
                         {
-                            "id": 27,
-                            "key": "smartdataurl_notimplemented",
-                            "value": "https:\/\/scl.fh-bielefeld.de\/SmartDataAirquality\/",
-                            "datajob_id": 10,
-                            "type": "url"
-                        },
+                            "value": "https://scl.fh-bielefeld.de/SmartDataAirquality/", 
+                            "type": "url", 
+                            "id": 27, 
+                            "key": "smartdataurl_notimplemented", 
+                            "datajob_id": 10
+                        }, 
                         {
-                            "id": 28,
-                            "key": "requestmethod",
-                            "value": "POST",
-                            "datajob_id": 10,
-                            "type": "string"
-                        },
+                            "value": "POST", 
+                            "type": "string", 
+                            "id": 28, 
+                            "key": "requestmethod", 
+                            "datajob_id": 10
+                        }, 
                         {
-                            "id": 29,
-                            "key": "urlparams",
-                            "value": "{\r\n\t\"storage\": \"smartmonitoring\",\r\n\t\"collection\": \"sensor_{mac}\"\r\n}",
-                            "datajob_id": 10,
-                            "type": "string"
-                        },
+                            "value": "{\r\n\t\"storage\": \"smartmonitoring\",\r\n\t\"collection\": \"sensor_{mac}\"\r\n}", 
+                            "type": "string", 
+                            "id": 29, 
+                            "key": "urlparams", 
+                            "datajob_id": 10
+                        }, 
                         {
-                            "id": 30,
-                            "key": "prejobfield",
-                            "value": "records",
-                            "datajob_id": 10,
-                            "type": "string"
-                        },
+                            "value": "records", 
+                            "type": "string", 
+                            "id": 30, 
+                            "key": "prejobfield", 
+                            "datajob_id": 10
+                        }, 
                         {
-                            "id": 31,
-                            "key": "syncedField",
-                            "value": "synced",
-                            "datajob_id": 10,
-                            "type": "string"
-                        },
+                            "value": "synced", 
+                            "type": "string", 
+                            "id": 31, 
+                            "key": "syncedField", 
+                            "datajob_id": 10
+                        }, 
                         {
-                            "id": 32,
-                            "key": "command",
-                            "value": "python",
-                            "datajob_id": 11,
-                            "type": "string"
-                        },
+                            "value": "python", 
+                            "type": "string", 
+                            "id": 32, 
+                            "key": "command", 
+                            "datajob_id": 11
+                        }, 
                         {
-                            "id": 33,
-                            "key": "parameter",
-                            "value": "\/home\/pi\/payara\/scripts\/all_sensors.py",
-                            "datajob_id": 11,
-                            "type": "string"
-                        },
+                            "value": "/home/pi/payara/scripts/all_sensors.py", 
+                            "type": "string", 
+                            "id": 33, 
+                            "key": "parameter", 
+                            "datajob_id": 11
+                        }, 
                         {
-                            "id": 34,
-                            "key": "command",
-                            "value": "python",
-                            "datajob_id": 12,
-                            "type": "string"
-                        },
+                            "value": "python", 
+                            "type": "string", 
+                            "id": 34, 
+                            "key": "command", 
+                            "datajob_id": 12
+                        }, 
                         {
-                            "id": 35,
-                            "key": "parameter",
-                            "value": "\/home\/pi\/payara\/scripts\/measurementProcessID.py",
-                            "datajob_id": 12,
-                            "type": "string"
-                        },
+                            "value": "/home/pi/payara/scripts/measurementProcessID.py", 
+                            "type": "string", 
+                            "id": 35, 
+                            "key": "parameter", 
+                            "datajob_id": 12
+                        }, 
                         {
-                            "id": 37,
-                            "key": "url",
-                            "value": "https:\/\/scl.fh-bielefeld.de\/SmartDataAirquality\/smartdata\/records\/sensor_{mac}?storage=smartmonitoring",
-                            "datajob_id": 14,
-                            "type": "url"
-                        },
+                            "value": "https://scl.fh-bielefeld.de/SmartDataAirquality/smartdata/records/sensor_{mac}?storage=smartmonitoring", 
+                            "type": "url", 
+                            "id": 37, 
+                            "key": "url", 
+                            "datajob_id": 14
+                        }, 
                         {
-                            "id": 38,
-                            "key": "smardataurl_notimplemented",
-                            "value": "https:\/\/scl.fh-bielefeld.de\/SmartDataAirquality\/",
-                            "datajob_id": 14,
-                            "type": "url"
-                        },
+                            "value": "https://scl.fh-bielefeld.de/SmartDataAirquality/", 
+                            "type": "url", 
+                            "id": 38, 
+                            "key": "smardataurl_notimplemented", 
+                            "datajob_id": 14
+                        }, 
                         {
-                            "id": 39,
-                            "key": "requestmethod",
-                            "value": "POST",
-                            "datajob_id": 14,
-                            "type": "string"
-                        },
+                            "value": "POST", 
+                            "type": "string", 
+                            "id": 39, 
+                            "key": "requestmethod", 
+                            "datajob_id": 14
+                        }, 
                         {
-                            "id": 41,
-                            "key": "urlparams",
-                            "value": "{\r\n\t\"storage\": \"smartmonitoring\",\r\n\t\"collection\": \"sensor_{mac}\"\r\n}",
-                            "datajob_id": 14,
-                            "type": "string"
-                        },
+                            "value": "{\r\n\t\"storage\": \"smartmonitoring\",\r\n\t\"collection\": \"sensor_{mac}\"\r\n}", 
+                            "type": "string", 
+                            "id": 41, 
+                            "key": "urlparams", 
+                            "datajob_id": 14
+                        }, 
                         {
-                            "id": 42,
-                            "key": "body",
-                            "value": "{\r\n\t\"finished\": true\r\n}",
-                            "datajob_id": 14,
-                            "type": "string"
-                        },
+                            "value": "{\r\n\t\"finished\": true\r\n}", 
+                            "type": "string", 
+                            "id": 42, 
+                            "key": "body", 
+                            "datajob_id": 14
+                        }, 
                         {
-                            "id": 43,
-                            "key": "parameter",
-                            "value": "\/home\/pi\/payara\/scripts\/t6613.py",
-                            "datajob_id": 4,
-                            "type": "string"
-                        },
+                            "value": "/home/pi/payara/scripts/t6613.py", 
+                            "type": "string", 
+                            "id": 43, 
+                            "key": "parameter", 
+                            "datajob_id": 4
+                        }, 
                         {
-                            "id": 44,
-                            "key": "command",
-                            "value": "python",
-                            "datajob_id": 4,
-                            "type": "string"
-                        },
+                            "value": "python", 
+                            "type": "string", 
+                            "id": 44, 
+                            "key": "command", 
+                            "datajob_id": 4
+                        }, 
                         {
-                            "id": 45,
-                            "key": "file_path",
-                            "value": "MeasurementProcessID.json",
-                            "datajob_id": 15,
-                            "type": "string"
-                        },
+                            "value": "MeasurementProcessID.json", 
+                            "type": "string", 
+                            "id": 45, 
+                            "key": "file_path", 
+                            "datajob_id": 15
+                        }, 
                         {
-                            "id": 46,
-                            "key": "smartdataurl",
-                            "value": "http:\/\/localhost:8080\/SmartDataAirquality",
-                            "datajob_id": 16,
-                            "type": "string"
-                        },
+                            "value": "http://localhost:8080/SmartDataAirquality", 
+                            "type": "string", 
+                            "id": 46, 
+                            "key": "smartdataurl", 
+                            "datajob_id": 16
+                        }, 
                         {
-                            "id": 47,
-                            "key": "storage",
-                            "value": "smartmonitoring",
-                            "datajob_id": 16,
-                            "type": "string"
-                        },
+                            "value": "smartmonitoring", 
+                            "type": "string", 
+                            "id": 47, 
+                            "key": "storage", 
+                            "datajob_id": 16
+                        }, 
                         {
-                            "id": 48,
-                            "key": "collection",
-                            "value": "sensordata",
-                            "datajob_id": 16,
-                            "type": "string"
-                        },
+                            "value": "sensordata", 
+                            "type": "string", 
+                            "id": 48, 
+                            "key": "collection", 
+                            "datajob_id": 16
+                        }, 
                         {
-                            "id": 49,
-                            "key": "days",
-                            "value": "14",
-                            "datajob_id": 16,
-                            "type": "int"
-                        },
+                            "value": "14", 
+                            "type": "int", 
+                            "id": 49, 
+                            "key": "days", 
+                            "datajob_id": 16
+                        }, 
                         {
-                            "id": 50,
-                            "key": "filter",
-                            "value": "synced,eq,true",
-                            "datajob_id": 16,
-                            "type": "string"
-                        },
+                            "value": "synced,eq,true", 
+                            "type": "string", 
+                            "id": 50, 
+                            "key": "filter", 
+                            "datajob_id": 16
+                        }, 
                         {
-                            "id": 51,
-                            "key": "smartdataurl",
-                            "value": "http:\/\/localhost:8080\/SmartData",
-                            "datajob_id": 17,
-                            "type": "string"
-                        },
+                            "value": "http://localhost:8080/SmartData", 
+                            "type": "string", 
+                            "id": 51, 
+                            "key": "smartdataurl", 
+                            "datajob_id": 17
+                        }, 
                         {
-                            "id": 52,
-                            "key": "storage",
-                            "value": "smartmonitoring",
-                            "datajob_id": 17,
-                            "type": "string"
-                        },
+                            "value": "smartmonitoring", 
+                            "type": "string", 
+                            "id": 52, 
+                            "key": "storage", 
+                            "datajob_id": 17
+                        }, 
                         {
-                            "id": 53,
-                            "key": "collection",
-                            "value": "datajobs_log",
-                            "datajob_id": 17,
-                            "type": "string"
-                        },
+                            "value": "datajobs_log", 
+                            "type": "string", 
+                            "id": 53, 
+                            "key": "collection", 
+                            "datajob_id": 17
+                        }, 
                         {
-                            "id": 54,
-                            "key": "days",
-                            "value": "14",
-                            "datajob_id": 17,
-                            "type": "int"
-                        },
+                            "value": "14", 
+                            "type": "int", 
+                            "id": 54, 
+                            "key": "days", 
+                            "datajob_id": 17
+                        }, 
                         {
-                            "id": 55,
-                            "key": "filter",
-                            "value": "processed,eq,true",
-                            "datajob_id": 17,
-                            "type": "string"
+                            "value": "processed,eq,true", 
+                            "type": "string", 
+                            "id": 55, 
+                            "key": "filter", 
+                            "datajob_id": 17
                         }
-                    ]
+                    ], 
+                    "fromName": "datajobs_params", 
+                    "name": "datajobs_params", 
+                    "method": "create"
                 }
-            ]
+            ], 
+            "desc": "SmartDataJobs Airquality sensordata table and job configuration"
         }
     ]
 }
