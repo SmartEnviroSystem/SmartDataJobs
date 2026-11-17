@@ -1,3 +1,29 @@
+# macOS metadata
+.DS_Store
+
+# NetBeans / Ant build output and machine-local settings
 /dist/
-/nbproject/private/
 /build/
+/nbproject/private/
+
+# IntelliJ project files are local to each developer's setup
+/.idea/
+/*.iml
+
+# Java and Jython generated artifacts
+*.pyc
+*.pyo
+__pycache__/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# The Jython installation's examples, documentation, and test suite are not
+# runtime dependencies. Keep its jar, Lib runtime, registry, and license files.
+/libs/libs/Demo/
+/libs/libs/Doc/
+/libs/libs/tests/
+/libs/libs/Lib/test/

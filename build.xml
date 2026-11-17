@@ -10,6 +10,27 @@
 <project name="SmartDataJobs" default="default" basedir=".">
     <description>Builds, tests, and runs the project SmartDataJobs.</description>
     <import file="nbproject/build-impl.xml"/>
+
+    <!--
+    NetBeans' generated library-inclusion target only knows about libraries
+    registered when the project was generated. Add SSHJ and its runtime jars
+    after the generated target has prepared build/web, so they are included in
+    the WAR without editing nbproject/build-impl.xml.
+    -->
+    <target name="-post-compile">
+        <mkdir dir="${build.web.dir}/WEB-INF/lib"/>
+        <copy todir="${build.web.dir}/WEB-INF/lib">
+            <fileset dir="${basedir}/libs">
+                <include name="sshj-0.41.2.jar"/>
+                <include name="asn-one-0.6.0.jar"/>
+                <include name="bcpkix-jdk18on-1.85.jar"/>
+                <include name="bcprov-jdk18on-1.85.jar"/>
+                <include name="bcutil-jdk18on-1.85.jar"/>
+                <include name="slf4j-api-2.0.17.jar"/>
+                <include name="slf4j-simple-2.0.17.jar"/>
+            </fileset>
+        </copy>
+    </target>
     
     <!--
     Target to remove jakartaee.jar from WEB-INF/lib after WAR creation.

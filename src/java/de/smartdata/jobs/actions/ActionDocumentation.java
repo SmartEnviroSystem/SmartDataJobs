@@ -23,6 +23,7 @@ public class ActionDocumentation {
         actions.add(new CheckNetAction());
         actions.add(new CommandExecutionAction());
         actions.add(new MailAction());
+        actions.add(new PythonAction());
         
         // Create documentation
         for(Action curAction : actions) {

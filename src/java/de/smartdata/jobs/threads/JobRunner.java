@@ -626,6 +626,9 @@ public class JobRunner {
     private Action getJobAction(JsonObject job) {
         Action jobsaction;
         switch (job.getString("action")) {
+            case "Pyhton":
+                jobsaction = new PythonAction();
+                break;
             case "CheckNet":
                 jobsaction = new CheckNetAction();
                 break;
