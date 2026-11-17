@@ -28,6 +28,12 @@
                     "type": "rest",
                     "method": "defs",
                     "fromName": "datajobs_log"
+                },
+                {
+                    "name": "datajobs_join_oo",
+                    "type": "rest",
+                    "method": "defs",
+                    "fromName": "datajobs_join_oo"
                 }
             ],
             "collections": [
@@ -219,6 +225,45 @@
                             {
                                 "name": "active",
                                 "type": "bool"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "datajobs_join_oo",
+                    "fromName": "datajobs_join_oo",
+                    "method": "cdefs",
+                    "body": {
+                        "name": "datajobs_join_oo",
+                        "attributes": [
+                            {
+                                "isIdentity": true,
+                                "isAutoIncrement": true,
+                                "isNullable": false,
+                                "name": "id",
+                                "type": "bigserial"
+                            },
+                            {
+                                "isNullable": false,
+                                "name": "datajob_id",
+                                "type": "int8",
+                                "refName": "datajobs_join_oo_datajobs_fk_datajob",
+                                "refAttribute": "id",
+                                "refCollection": "datajobs",
+                                "refStorage": "smartmonitoring",
+                                "refOnDelete": "CASCADE",
+                                "refOnUpdate": "CASCADE"
+                            },
+                            {
+                                "isNullable": false,
+                                "name": "oo_id",
+                                "type": "int8",
+                                "refName": "datajobs_join_oo_tbl_observedobject_fk_oo",
+                                "refAttribute": "id",
+                                "refCollection": "tbl_observedobject",
+                                "refStorage": "smartmonitoring",
+                                "refOnDelete": "CASCADE",
+                                "refOnUpdate": "CASCADE"
                             }
                         ]
                     }
