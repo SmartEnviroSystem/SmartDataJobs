@@ -190,9 +190,8 @@ public class JobRunner {
 
             // Jump to next job if this one is misconfigured
             if (jobsaction == null) {
-                Json.createValue("failed");
                 returnJson.add("state", "failed");
-                returnJson.add("statemsg", "There is no action with name >" + job.getString("action") + "< implemented.");
+                returnJson.add("statemsg", "There is no action with name >" + job.getString("action", "") + "< implemented.");
                 JsonObject result = returnJson.build();
                 saveResultLog(smartdataurl, collection, storage, jobid, result, true, false);
                 return result;
@@ -205,6 +204,15 @@ public class JobRunner {
             JsonObjectBuilder result1 = Json.createObjectBuilder();
             JsonArray jobparams = acc.fetchData(storage, collection + "_params", null, "datajob_id,eq," + job.getInt("id"), null, null, null, null, null, result1);
             JsonObject jobparamobj = loadJobParams(jobparams, returnJson);
+
+            // A misconfigured job fails alone instead of aborting the whole schedule
+            if (jobparamobj == null) {
+                returnJson.add("state", "failed");
+                returnJson.add("statemsg", "Job is misconfigured: at least one parameter could not be loaded (see paramError).");
+                JsonObject result = returnJson.build();
+                saveResultLog(smartdataurl, collection, storage, jobid, result, true, false);
+                return result;
+            }
 
             try {
                 jobsaction.setParams(jobparamobj);
@@ -271,8 +279,10 @@ public class JobRunner {
             String jobCode = this.getJobCode(smartdataurl, collection, storage, jobid);
             this.futures.put(jobCode, future);
         } catch (SmartDataAccessorException ex) {
+            returnJson.add("state", "failed");
             returnJson.add("error", "Error accessing job actions: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
         } catch (JobRunnerException ex) {
+            returnJson.add("state", "failed");
             returnJson.add("error", "Error accessing job actions: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
         }
         JsonObject jobuild = returnJson.build();
@@ -648,7 +658,11 @@ public class JobRunner {
 
     private Action getJobAction(JsonObject job) {
         Action jobsaction;
-        switch (job.getString("action")) {
+        String actionname = job.getString("action", null);
+        if (actionname == null) {
+            return null;
+        }
+        switch (actionname) {
             case "CheckNet":
                 jobsaction = new CheckNetAction();
                 break;
@@ -682,29 +696,54 @@ public class JobRunner {
         return jobsaction;
     }
 
+    /**
+     * Loads the job parameters from the fetched datajobs_params records.
+     *
+     * @param jobparams Fetched parameter records
+     * @param returnJson Builder for the job result; gets a "paramError" entry
+     * for every parameter that could not be loaded
+     * @return JsonObject with the loaded parameters, or null if at least one
+     * parameter could not be loaded
+     */
     private JsonObject loadJobParams(JsonArray jobparams, JsonObjectBuilder returnJson) {
         // Transform to object
         JsonObjectBuilder jobparamobjb = Json.createObjectBuilder();
+        boolean paramerror = false;
         for (int i = 0; i < jobparams.size(); i++) {
             JsonObject jobparam = jobparams.getJsonObject(i);
-            String key = jobparam.getString("key");
-            String valstr = jobparam.getString("value");
-            String type = jobparam.getString("type", null);
-            switch (type) {
-                case "string":
-                case "email":
-                case "url":
-                    jobparamobjb.add(key, valstr);
-                    break;
-                case "int":
-                    jobparamobjb.add(key, Integer.parseInt(valstr));
-                    break;
-                case "float":
-                    jobparamobjb.add(key, Float.parseFloat(valstr));
-                    break;
-                default:
-                    returnJson.add("paramError", "Parameter type >" + type + "< for configuration entry >" + key + "< with value >" + valstr + "< is not known. Please use string, email, url, int or float.");
+            try {
+                String key = jobparam.getString("key");
+                String valstr = jobparam.getString("value");
+                String type = jobparam.getString("type", null);
+                if (type == null) {
+                    returnJson.add("paramError", "Parameter type is missing for configuration entry >" + key + "< with value >" + valstr + "<. Please use string, email, url, int or float.");
+                    paramerror = true;
+                    continue;
+                }
+                switch (type) {
+                    case "string":
+                    case "email":
+                    case "url":
+                        jobparamobjb.add(key, valstr);
+                        break;
+                    case "int":
+                        jobparamobjb.add(key, Integer.parseInt(valstr));
+                        break;
+                    case "float":
+                        jobparamobjb.add(key, Float.parseFloat(valstr));
+                        break;
+                    default:
+                        returnJson.add("paramError", "Parameter type >" + type + "< for configuration entry >" + key + "< with value >" + valstr + "< is not known. Please use string, email, url, int or float.");
+                        paramerror = true;
+                }
+            } catch (RuntimeException ex) {
+                // A single malformed parameter must not abort loading the remaining parameters
+                returnJson.add("paramError", "Could not load parameter >" + jobparam.getString("key", "unknown") + "<: " + ex.getClass().getSimpleName() + ": " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
+                paramerror = true;
             }
+        }
+        if (paramerror) {
+            return null;
         }
         return jobparamobjb.build();
     }
@@ -736,7 +775,15 @@ public class JobRunner {
             job.forEach(innerJobinfo::add);
             innerJobinfo.add("params", params);
             innerJobinfo.add("result", result);
-            saveResultLog(smartdataurl, collection, storage, jobid, result, false, false);
+
+            // Derive the error flags from the action's own verdict instead of hardcoding them
+            String state = result.getString("state", "");
+            boolean haserror = "failed".equals(state) || "error".equals(state);
+            String statemsg = result.containsKey("statemsg")
+                    ? result.getString("statemsg")
+                    : result.getString("stateMsg", null);
+            boolean wastimeout = statemsg != null && statemsg.contains("timeout");
+            saveResultLog(smartdataurl, collection, storage, jobid, result, haserror, wastimeout);
             if (stoppedWhileExecuting.contains(jobCode)) {
                 Logger.log("Job >" + jobid + "< was stopped, chained jobs are not started.");
                 return;

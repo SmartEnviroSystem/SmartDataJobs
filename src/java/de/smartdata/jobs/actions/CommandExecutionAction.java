@@ -112,13 +112,13 @@ public class CommandExecutionAction extends Action {
                 return result.build();
             }
 
+            // Exit code of the process (0 = success)
+            int exitcode = process.exitValue();
+            result.add("exitcode", exitcode);
+
             // Ausgabe auslesen
             String msg = outputFuture.get(5, TimeUnit.SECONDS); // Timeout für das Lesen der Ausgabe
-            if (msg.contains("Traceback")) {
-                result.add("state", "failed");
-            } else {
-                result.add("state", "finished");
-            }
+            boolean parsed = true;
             try {
                 if(msg.startsWith("[")) {
                     JsonReader reader = Json.createReader(new StringReader(msg));
@@ -135,8 +135,19 @@ public class CommandExecutionAction extends Action {
                     result.add("statemsg", msg);
                 }
             } catch (Exception ex) {
-//                msg = this.escapeString(msg);
+                // Only mark the parse as failed; the state is decided by the exit code below
+                parsed = false;
                 result.add("statemsg", "Error parsing JSON >" + msg + "<: " + ex.getLocalizedMessage());
+            }
+
+            // State from the process exit code, not from output heuristics
+            if (exitcode == 0 && parsed) {
+                result.add("state", "finished");
+            } else {
+                result.add("state", "failed");
+                if (exitcode != 0) {
+                    result.add("statemsg", "Process exited with code " + exitcode + ".");
+                }
             }
 
             executor.shutdown();
