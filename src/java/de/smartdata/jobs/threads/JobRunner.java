@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,6 +39,8 @@ public class JobRunner {
     private ScheduledExecutorService priorityExecutor;
 
     private Map<String, Future<?>> futures = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Set<String> executingJobs = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final Set<String> stoppedWhileExecuting = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private boolean stopped = false;
 
     // Singleton instance
@@ -187,9 +190,8 @@ public class JobRunner {
 
             // Jump to next job if this one is misconfigured
             if (jobsaction == null) {
-                Json.createValue("failed");
                 returnJson.add("state", "failed");
-                returnJson.add("statemsg", "There is no action with name >" + job.getString("action") + "< implemented.");
+                returnJson.add("statemsg", "There is no action with name >" + job.getString("action", "") + "< implemented.");
                 JsonObject result = returnJson.build();
                 saveResultLog(smartdataurl, collection, storage, jobid, result, true, false);
                 return result;
@@ -202,6 +204,15 @@ public class JobRunner {
             JsonObjectBuilder result1 = Json.createObjectBuilder();
             JsonArray jobparams = acc.fetchData(storage, collection + "_params", null, "datajob_id,eq," + job.getInt("id"), null, null, null, null, null, result1);
             JsonObject jobparamobj = loadJobParams(jobparams, returnJson);
+
+            // A misconfigured job fails alone instead of aborting the whole schedule
+            if (jobparamobj == null) {
+                returnJson.add("state", "failed");
+                returnJson.add("statemsg", "Job is misconfigured: at least one parameter could not be loaded (see paramError).");
+                JsonObject result = returnJson.build();
+                saveResultLog(smartdataurl, collection, storage, jobid, result, true, false);
+                return result;
+            }
 
             try {
                 jobsaction.setParams(jobparamobj);
@@ -268,8 +279,10 @@ public class JobRunner {
             String jobCode = this.getJobCode(smartdataurl, collection, storage, jobid);
             this.futures.put(jobCode, future);
         } catch (SmartDataAccessorException ex) {
+            returnJson.add("state", "failed");
             returnJson.add("error", "Error accessing job actions: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
         } catch (JobRunnerException ex) {
+            returnJson.add("state", "failed");
             returnJson.add("error", "Error accessing job actions: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
         }
         JsonObject jobuild = returnJson.build();
@@ -517,6 +530,17 @@ public class JobRunner {
         for (Entry<String, Future<?>> future : futures.entrySet()) {
             if (future.getKey().equals(jobCode)) {
                 if (!future.getValue().isDone()) {
+                    JsonObject stoplog = Json.createObjectBuilder()
+                            .add("state", "stopped")
+                            .add("stateMsg", "Job execution was stopped.").build();
+                    try {
+                        saveResultLog(smartdataurl, collection, storage, job_id, stoplog, false, false);
+                    } catch (JobRunnerException ex) {
+                        result.add("error", "Could not save stop in log: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
+                    }
+                    if (executingJobs.contains(jobCode)) {
+                        stoppedWhileExecuting.add(jobCode);
+                    }
                     future.getValue().cancel(true);
                 }
                 futures.remove(future.getKey());
@@ -566,7 +590,7 @@ public class JobRunner {
     }
 
     /**
-     * Lists the states of all currently registred jobs
+     * Lists the states of all jobs
      *
      * @param smartdataurl URL to the SmartData Instance that contains job
      * informations
@@ -577,26 +601,35 @@ public class JobRunner {
     public JsonArray getJobStates(String smartdataurl, String collection, String storage) {
         JsonArrayBuilder jab = Json.createArrayBuilder();
         SmartDataAccessor acc = new SmartDataAccessor(smartdataurl);
+        JsonArray jobs;
+        try {
+            jobs = acc.fetchData(storage, collection, "id", null, null, null, null, null, null, Json.createObjectBuilder());
+        } catch (SmartDataAccessorException ex) {
+            jab.add(Json.createObjectBuilder().add("error", "Could not fetch jobs: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage())));
+            return jab.build();
+        }
 
-        for (Entry<String, Future<?>> future : futures.entrySet()) {
+        for (JsonObject curJob : jobs.getValuesAs(JsonObject.class)) {
             JsonObjectBuilder job = Json.createObjectBuilder();
+            long jobid = curJob.getJsonNumber("id").longValue();
+            job.add("id", jobid);
 
             // Get actual state
-            if (future.getValue().isDone()) {
-                job.add("Job >" + future.getKey() + "<", "stopped");
+            String jobCode = this.getJobCode(smartdataurl, collection, storage, jobid);
+            Future<?> future = futures.get(jobCode);
+            if (executingJobs.contains(jobCode)) {
+                job.add("state", "running");
+            } else if (future == null || future.isDone()) {
+                job.add("state", "stopped");
             } else {
-                job.add("Job >" + future.getKey() + "<", "running");
+                job.add("state", "waiting");
             }
 
             // Get last activity log
             try {
                 JsonObjectBuilder result = Json.createObjectBuilder();
-                JsonArray data = acc.fetchData(storage, collection + "_log", null, null, "ts", null, null, "ts,DESC", 1L, result);
-                if (data.isEmpty()) {
-                    job.add("state", "There was no previous execution");
-                } else {
-                    job.add("lastlog", data);
-                }
+                JsonArray data = acc.fetchData(storage, collection + "_log", null, "datajob_id,eq," + jobid, "ts", null, null, "ts,DESC", 1L, result);
+                job.add("lastlog", data);
             } catch (SmartDataAccessorException ex) {
                 job.add("error", "Could not fetch last activity: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
             }
@@ -625,7 +658,11 @@ public class JobRunner {
 
     private Action getJobAction(JsonObject job) {
         Action jobsaction;
-        switch (job.getString("action")) {
+        String actionname = job.getString("action", null);
+        if (actionname == null) {
+            return null;
+        }
+        switch (actionname) {
             case "CheckNet":
                 jobsaction = new CheckNetAction();
                 break;
@@ -659,29 +696,54 @@ public class JobRunner {
         return jobsaction;
     }
 
+    /**
+     * Loads the job parameters from the fetched datajobs_params records.
+     *
+     * @param jobparams Fetched parameter records
+     * @param returnJson Builder for the job result; gets a "paramError" entry
+     * for every parameter that could not be loaded
+     * @return JsonObject with the loaded parameters, or null if at least one
+     * parameter could not be loaded
+     */
     private JsonObject loadJobParams(JsonArray jobparams, JsonObjectBuilder returnJson) {
         // Transform to object
         JsonObjectBuilder jobparamobjb = Json.createObjectBuilder();
+        boolean paramerror = false;
         for (int i = 0; i < jobparams.size(); i++) {
             JsonObject jobparam = jobparams.getJsonObject(i);
-            String key = jobparam.getString("key");
-            String valstr = jobparam.getString("value");
-            String type = jobparam.getString("type", null);
-            switch (type) {
-                case "string":
-                case "email":
-                case "url":
-                    jobparamobjb.add(key, valstr);
-                    break;
-                case "int":
-                    jobparamobjb.add(key, Integer.parseInt(valstr));
-                    break;
-                case "float":
-                    jobparamobjb.add(key, Float.parseFloat(valstr));
-                    break;
-                default:
-                    returnJson.add("paramError", "Parameter type >" + type + "< for configuration entry >" + key + "< with value >" + valstr + "< is not known. Please use string, email, url, int or float.");
+            try {
+                String key = jobparam.getString("key");
+                String valstr = jobparam.getString("value");
+                String type = jobparam.getString("type", null);
+                if (type == null) {
+                    returnJson.add("paramError", "Parameter type is missing for configuration entry >" + key + "< with value >" + valstr + "<. Please use string, email, url, int or float.");
+                    paramerror = true;
+                    continue;
+                }
+                switch (type) {
+                    case "string":
+                    case "email":
+                    case "url":
+                        jobparamobjb.add(key, valstr);
+                        break;
+                    case "int":
+                        jobparamobjb.add(key, Integer.parseInt(valstr));
+                        break;
+                    case "float":
+                        jobparamobjb.add(key, Float.parseFloat(valstr));
+                        break;
+                    default:
+                        returnJson.add("paramError", "Parameter type >" + type + "< for configuration entry >" + key + "< with value >" + valstr + "< is not known. Please use string, email, url, int or float.");
+                        paramerror = true;
+                }
+            } catch (RuntimeException ex) {
+                // A single malformed parameter must not abort loading the remaining parameters
+                returnJson.add("paramError", "Could not load parameter >" + jobparam.getString("key", "unknown") + "<: " + ex.getClass().getSimpleName() + ": " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
+                paramerror = true;
             }
+        }
+        if (paramerror) {
+            return null;
         }
         return jobparamobjb.build();
     }
@@ -689,6 +751,8 @@ public class JobRunner {
     private void runJobAsync(Action jobsaction, String smartdataurl, String collection, String storage, JsonObject job, long jobid, LocalDateTime stop, JsonObject params) {
         Logger.startProcess(jobid + " (" + job.getString("name") + "):" + Instant.now().toString());
         Logger.log("Now running runnableTask for job >" + jobid + "<");
+        String jobCode = this.getJobCode(smartdataurl, collection, storage, jobid);
+        executingJobs.add(jobCode);
 
         try {
             if (stopped) {
@@ -711,7 +775,19 @@ public class JobRunner {
             job.forEach(innerJobinfo::add);
             innerJobinfo.add("params", params);
             innerJobinfo.add("result", result);
-            saveResultLog(smartdataurl, collection, storage, jobid, result, false, false);
+
+            // Derive the error flags from the action's own verdict instead of hardcoding them
+            String state = result.getString("state", "");
+            boolean haserror = "failed".equals(state) || "error".equals(state);
+            String statemsg = result.containsKey("statemsg")
+                    ? result.getString("statemsg")
+                    : result.getString("stateMsg", null);
+            boolean wastimeout = statemsg != null && statemsg.contains("timeout");
+            saveResultLog(smartdataurl, collection, storage, jobid, result, haserror, wastimeout);
+            if (stoppedWhileExecuting.contains(jobCode)) {
+                Logger.log("Job >" + jobid + "< was stopped, chained jobs are not started.");
+                return;
+            }
             CompletableFuture.runAsync(() -> {
                 try {
                     this.startJobChain(smartdataurl, collection, storage, innerJobinfo.build());
@@ -732,6 +808,8 @@ public class JobRunner {
             Logger.log("Error occured while executing job >" + job.getInt("id") + "<: " + e.getLocalizedMessage());
             e.printStackTrace();
         } finally {
+            executingJobs.remove(jobCode);
+            stoppedWhileExecuting.remove(jobCode);
             Logger.endProcess();
         }
     }
