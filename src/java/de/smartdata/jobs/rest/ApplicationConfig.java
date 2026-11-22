@@ -33,6 +33,7 @@ public class ApplicationConfig extends Application {
         resources.add(de.fhbielefeld.smartuser.rest.OwnershipFilter.class);
         resources.add(de.ngi.restutils.LoggingFilter.class);
         resources.add(de.smartdata.jobs.rest.JobExecutionResource.class);
+        resources.add(de.smartdata.jobs.rest.PythonResource.class);
         resources.add(de.smartdata.jobs.rest.SystemResource.class);
         resources.add(de.smartdata.jobs.rest.TestRessource.class);
     }

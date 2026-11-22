@@ -5,6 +5,7 @@
 /dist/
 /build/
 /nbproject/private/
+/out/
 
 # IntelliJ project files are local to each developer's setup
 /.idea/
