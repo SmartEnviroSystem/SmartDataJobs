@@ -337,6 +337,7 @@ public class SystemResource {
             JsonArrayBuilder arr = Json.createArrayBuilder();
             for (String key : childResources.keySet()) {
                 JsonObjectBuilder obj = Json.createObjectBuilder();
+                obj.add("id", key);
                 obj.add("name", key);
                 obj.add("value", key);
                 arr.add(obj);
@@ -366,10 +367,11 @@ public class SystemResource {
             if (mgmtJson != null) {
                 return Response.ok(processManagementJson(mgmtJson).toString()).build();
             }
-            // Fallback: SmartData Root prüfen (ohne Auth)
-            if (isReachable("http://localhost:8080/SmartData/")) {
+            // Fallback: SmartData API prüfen (ohne Auth)
+            if (isReachable("http://localhost:8080/SmartData/smartdata/system/info")) {
                 JsonArray arr = Json.createArrayBuilder()
                         .add(Json.createObjectBuilder()
+                                .add("id", "SmartData")
                                 .add("name", "SmartData")
                                 .add("value", "SmartData")
                                 .add("type", "SmartData"))
@@ -455,6 +457,7 @@ public class SystemResource {
 
         for (String key : childResources.keySet()) {
             JsonObjectBuilder obj = Json.createObjectBuilder();
+            obj.add("id", key);
             obj.add("name", key);
             obj.add("value", key);
 

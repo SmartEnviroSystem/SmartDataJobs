@@ -1,42 +1,41 @@
 window['select_target_options'] = {
-    showWhenNoData: true,
-    onChangeSelections: function (evt) {
-        // You are inside the component here
-        let elem = document.querySelector('#select_target');
-        let inputs = elem.swac_comp.getInputs();
-        let source;
-        for (let curInput of inputs) {
-            source = curInput.name;
-        }
-        window['adm_presets_options'].targetSource = {
-            url: '/' + source + '/smartdata/[iface]/[fromName]?storage=smartmonitoring',
-            interfaces: {
-                get: ['GET', 'records'],
-                list: ['GET', 'records'],
-                defs: ['GET', 'collection'],
-                cdefs: ['POST', 'collection'],
-                create: ['POST', 'records'],
-                update: ['PUT', 'records'],
-                delete: ['DELETE', 'records']
-            }
-        };
-
-        // if presets is already loaded
-        let presetsElem = document.querySelector('#adm_presets');
-        if (typeof presetsElem.swac_comp !== "undefined") {
-            presetsElem.swac_comp.reload();
-        }
-    }
+    showWhenNoData: true
 };
+
 window['adm_presets_options'] = {
     showWhenNoData: true
 };
 
-// if presents component is not ready
-document.addEventListener('swac_ready', function () {
-    // Register reaction to the component with id "head_navigation"
-    window.swac.reactions.addReaction(function () {
-        let presetsElem = document.querySelector('#adm_presets');
+document.addEventListener('swac_select_target_selection_changed', async function (evt) {
+    const source = evt.detail.value;
+    const presetsElem = document.querySelector('#adm_presets');
+    presetsElem.hidden = !source;
+    if (!source) {
+        return;
+    }
+    const url = '/' + source + '/smartdata/[iface]/[fromName]?storage=smartmonitoring';
+    if (window['adm_presets_options'].targetSource?.url === url) {
+        return;
+    }
+    window['adm_presets_options'].targetSource = {
+        url: url,
+        interfaces: {
+            get: ['GET', 'records'],
+            list: ['GET', 'records'],
+            defs: ['GET', 'collection'],
+            cdefs: ['POST', 'collection'],
+            create: ['POST', 'records'],
+            update: ['PUT', 'records'],
+            delete: ['DELETE', 'records']
+        }
+    };
+
+    if (!presetsElem.hasAttribute('swa')) {
+        presetsElem.setAttribute('swa', presetsElem.dataset.swa);
+        const { default: ViewHandler } = await import('/SWAC/swac/ViewHandler.js');
+        await new ViewHandler().load(presetsElem);
+    } else if (presetsElem.swac_comp?.options) {
+        presetsElem.swac_comp.options.targetSource = window['adm_presets_options'].targetSource;
         presetsElem.swac_comp.reload();
-    }, "adm_presets", "select_target");
+    }
 });
