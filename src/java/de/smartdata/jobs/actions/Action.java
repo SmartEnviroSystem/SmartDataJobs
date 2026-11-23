@@ -19,6 +19,10 @@ public abstract class Action implements Callable<JsonObject> {
     private Long id;
     private JsonObject preJobsInfo;
 
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
     public Long getId() {
         return id;
     }

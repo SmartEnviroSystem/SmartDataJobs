@@ -13,6 +13,13 @@ import jakarta.json.JsonValue;
 /** Executes Python script on the configured host */
 public class PythonAction extends Action {
 
+    public static final String NAME = "PythonScript";
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
     private String scriptId;
     private int scriptVersion;
     private JsonObject scriptParams = Json.createObjectBuilder().build();

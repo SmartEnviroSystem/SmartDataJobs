@@ -664,7 +664,9 @@ public class JobRunner {
             return null;
         }
         switch (actionname) {
-            case "PythonScript":
+            case PythonAction.NAME:
+            case "PythonAction":
+            case "Python":
                 jobsaction = new PythonAction();
                 break;
             case "CheckNet":

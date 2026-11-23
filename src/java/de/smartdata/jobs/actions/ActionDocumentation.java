@@ -32,7 +32,7 @@ public class ActionDocumentation {
         // Create documentation
         for(Action curAction : actions) {
             JsonObjectBuilder job = Json.createObjectBuilder();
-            job.add("name", curAction.getClass().getSimpleName());
+            job.add("name", curAction.getName());
             job.add("params", curAction.getParamsDescription());
             jab.add(job);
         }

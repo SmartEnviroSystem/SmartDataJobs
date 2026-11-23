@@ -25,6 +25,8 @@ public class ActionFactory {
                 registry.put(clazz.getSimpleName().replace("Action", ""), clazz);
             }
         }
+        registry.put(PythonAction.NAME, PythonAction.class);
+        registry.put(PythonAction.class.getSimpleName(), PythonAction.class);
     }
 
     /**
