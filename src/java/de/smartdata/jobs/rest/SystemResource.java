@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map.Entry;
 import javax.naming.NamingException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -68,7 +67,7 @@ public class SystemResource {
     @Path("config")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get configuration",
-            description = "Lists all configuration options.")
+            description = "Lists public configuration options.")
     @APIResponse(
             responseCode = "200",
             description = "Objects with configuration informations",
@@ -90,11 +89,11 @@ public class SystemResource {
         rob.add("modulname", conf.getModuleName());
         rob.add("filename", conf.getFileName());
         rob.add("propsloaded", conf.isPropsloaded());
-        for (Entry<Object, Object> curEntry : conf.getAllProperties()) {
-            String curKey = curEntry.getKey().toString();
-            if (!curKey.startsWith("ldap_") && !curKey.equals("passwordsalt")
-                    && !curKey.equals("authtokensalt")) {
-                rob.add(curKey, curEntry.getValue().toString());
+        for (String key : List.of("appid", "debugmode", "authmode", "postgres.jndi",
+                "smtp.auth", "smtp.port", "python.scripts.storage", "python.scripts.collection")) {
+            String value = conf.getProperty(key);
+            if (value != null) {
+                rob.add(key, value);
             }
         }
         rob.setStatus(Response.Status.OK);
