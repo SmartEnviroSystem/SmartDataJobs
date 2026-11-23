@@ -14,6 +14,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonParser;
 import java.io.StringReader;
 import java.time.Duration;
 import java.time.Instant;
@@ -719,7 +720,7 @@ public class JobRunner {
                 String valstr = jobparam.getString("value");
                 String type = jobparam.getString("type", null);
                 if (type == null) {
-                    returnJson.add("paramError", "Parameter type is missing for configuration entry >" + key + "< with value >" + valstr + "<. Please use string, email, url, int or float.");
+                    returnJson.add("paramError", "Parameter type is missing for configuration entry >" + key + "< with value >" + valstr + "<. Please use string, email, url, int, float or json.");
                     paramerror = true;
                     continue;
                 }
@@ -735,8 +736,18 @@ public class JobRunner {
                     case "float":
                         jobparamobjb.add(key, Float.parseFloat(valstr));
                         break;
+                    case "json":
+                        try (JsonParser parser = Json.createParser(new StringReader(valstr))) {
+                            parser.next();
+                            JsonValue value = parser.getValue();
+                            if (parser.hasNext()) {
+                                throw new IllegalArgumentException("Expected exactly one JSON value");
+                            }
+                            jobparamobjb.add(key, value);
+                        }
+                        break;
                     default:
-                        returnJson.add("paramError", "Parameter type >" + type + "< for configuration entry >" + key + "< with value >" + valstr + "< is not known. Please use string, email, url, int or float.");
+                        returnJson.add("paramError", "Parameter type >" + type + "< for configuration entry >" + key + "< with value >" + valstr + "< is not known. Please use string, email, url, int, float or json.");
                         paramerror = true;
                 }
             } catch (RuntimeException ex) {
