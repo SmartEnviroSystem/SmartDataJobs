@@ -459,10 +459,12 @@ public class SmartDataAccessor {
         WebTarget target = recordsTarget(storage, collection)
                 .queryParam("includes", "scriptId,version,approved,scriptContent")
                 .queryParam("filter", "scriptId,eq," + scriptId)
-                .queryParam("size", 100);
+                .queryParam("filter", "version,eq," + version)
+                .queryParam("size", 1);
         for (JsonValue record : fetchRecords(target)) {
-            if (record.asJsonObject().getInt("version", -1) == version) {
-                return record.asJsonObject();
+            JsonObject row = record.asJsonObject();
+            if (scriptId.equals(row.getString("scriptId", null)) && row.getInt("version", -1) == version) {
+                return row;
             }
         }
         return null;
