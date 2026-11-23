@@ -293,7 +293,8 @@ public class CheckNetAction extends AbstractNetworkAction {
                 result = this.checkDirectories(ftpClient, directoryPath + "/" + dir.getName(), result);
             }
         } catch (IOException ex) {
-            result.add("state", "Error checking directory >" + directoryPath + "<: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
+            result.add("state", "failed");
+            result.add("statemsg", "Error checking directory >" + directoryPath + "<: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
         }
         return result;
     }
@@ -351,12 +352,13 @@ public class CheckNetAction extends AbstractNetworkAction {
                 result.add("state", "no new file in the last " + this.checklastseconds + " seconds");
             }
         } catch (IOException ex) {
-            result.add("checkFiles() error", "Could not check files in >" + directoryPath + "< because of: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
+            result.add("state", "failed");
+            result.add("statemsg", "Could not check files in >" + directoryPath + "<: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
         } catch (Exception ex) {
             Logger.log("Exception: " + ex.getClass().getSimpleName() + ": " + ex.getLocalizedMessage());
             ex.printStackTrace();
-            result.add("checkFiles() error", "Could not check files in >" + directoryPath + "< because of: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
-
+            result.add("state", "failed");
+            result.add("statemsg", "Could not check files in >" + directoryPath + "<: " + JSONFormatter.escapeForJson(ex.getLocalizedMessage()));
         }
         return result;
     }

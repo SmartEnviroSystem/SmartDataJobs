@@ -533,7 +533,7 @@ public class SmartDataAccessor {
         de.ngi.logging.Logger.log();
         Connection con = this.getConnection();
         if (con != null) {
-            String insertQuery = "INSERT INTO smartmonitoring.datajobs_log (datajob_id, result, iserror, wastimeout) VALUES (?, ?, ?, ?)";
+            String insertQuery = "INSERT INTO smartmonitoring.datajobs_log (datajob_id, result, iserror, wastimeout, ts) VALUES (?, ?, ?, ?, now())";
 
             try {
                 PreparedStatement preparedStatement = con.prepareStatement(insertQuery);

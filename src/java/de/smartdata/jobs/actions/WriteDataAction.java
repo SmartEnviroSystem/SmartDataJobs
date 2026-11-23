@@ -268,6 +268,9 @@ public class WriteDataAction extends AbstractNetworkAction {
 
                                 result.add("returnBody", syncParsed);
                             } catch (Exception e) {
+                                result.add("state", "failed");
+                                result.add("statemsg", "Data written to target, but write-back to source failed: "
+                                        + e.getClass().getSimpleName() + ": " + JSONFormatter.escapeForJson(e.getLocalizedMessage()));
                                 result.add("returnError", "Failed to post back to source: "
                                         + e.getClass().getSimpleName() + ": " + JSONFormatter.escapeForJson(e.getLocalizedMessage()));
                             }

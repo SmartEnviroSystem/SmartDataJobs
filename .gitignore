@@ -4,6 +4,7 @@
 # NetBeans / Ant build output and machine-local settings
 /dist/
 /build/
+/target/
 /nbproject/private/
 /out/
 

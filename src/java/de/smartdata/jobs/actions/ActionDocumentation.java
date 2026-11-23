@@ -24,6 +24,10 @@ public class ActionDocumentation {
         actions.add(new CommandExecutionAction());
         actions.add(new MailAction());
         actions.add(new PythonAction());
+        //action hinzufungen
+        actions.add(new CheckEventTriggers());
+        actions.add(new CreateFlagFileAction());
+        actions.add(new DeleteDataAction());
         
         // Create documentation
         for(Action curAction : actions) {

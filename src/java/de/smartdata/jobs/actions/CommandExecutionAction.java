@@ -112,13 +112,14 @@ public class CommandExecutionAction extends Action {
                 return result.build();
             }
 
+            // Exit code of the process (0 = success)
+            int exitcode = process.exitValue();
+            result.add("exitcode", exitcode);
+
             // Ausgabe auslesen
             String msg = outputFuture.get(5, TimeUnit.SECONDS); // Timeout für das Lesen der Ausgabe
-            if (msg.contains("Traceback")) {
-                result.add("state", "failed");
-            } else {
-                result.add("state", "finished");
-            }
+            boolean parsed = true;
+            String statemsg = null;
             try {
                 if(msg.startsWith("[")) {
                     JsonReader reader = Json.createReader(new StringReader(msg));
@@ -131,12 +132,25 @@ public class CommandExecutionAction extends Action {
                     records.add(jobj);
                     result.add("records", records);
                 } else {
-                    msg = this.escapeString(msg);
-                    result.add("statemsg", msg);
+                    statemsg = this.escapeString(msg);
                 }
             } catch (Exception ex) {
-//                msg = this.escapeString(msg);
-                result.add("statemsg", "Error parsing JSON >" + msg + "<: " + ex.getLocalizedMessage());
+                // Only mark the parse as failed; the state is decided by the exit code below
+                parsed = false;
+                statemsg = "Error parsing JSON >" + msg + "<: " + ex.getLocalizedMessage();
+            }
+
+            // State from the process exit code, not from output heuristics
+            if (exitcode == 0 && parsed) {
+                result.add("state", "finished");
+            } else {
+                result.add("state", "failed");
+                if (exitcode != 0) {
+                    statemsg = (statemsg != null ? statemsg + " " : "") + "Process exited with code " + exitcode + ".";
+                }
+            }
+            if (statemsg != null) {
+                result.add("statemsg", statemsg);
             }
 
             executor.shutdown();
@@ -156,6 +170,9 @@ public class CommandExecutionAction extends Action {
      * @return String with escaped characters
      */
     private String escapeString(String inputString) {
+        if (inputString == null) {
+            return "";
+        }
         String escapedString = inputString
                 .replace("\\", "\\\\") // Backslashes escapen
                 .replace("\n", "\\n") // Zeilenumbrüche escapen
