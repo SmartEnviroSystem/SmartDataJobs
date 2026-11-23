@@ -89,8 +89,7 @@ public class SystemResource {
         rob.add("modulname", conf.getModuleName());
         rob.add("filename", conf.getFileName());
         rob.add("propsloaded", conf.isPropsloaded());
-        for (String key : List.of("appid", "debugmode", "authmode", "postgres.jndi",
-                "smtp.auth", "smtp.port", "python.scripts.storage", "python.scripts.collection")) {
+        for (String key : List.of("appid", "debugmode", "authmode", "postgres.jndi", "smtp.auth", "smtp.port")) {
             String value = conf.getProperty(key);
             if (value != null) {
                 rob.add(key, value);

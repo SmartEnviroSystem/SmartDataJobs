@@ -384,7 +384,10 @@ public class SmartDataAccessor {
         result.add("storeMethod", "SmartDataAccessor/REST-API connection");
 
         // Get information about file from SmartData
-        WebTarget webTarget = recordsTarget(storage, collection);
+        WebTarget webTarget = WebTargetCreator.createWebTarget(
+                smartdataurl + "/smartdata", "records")
+                .path(collection)
+                .queryParam("storage", storage);
         if (filter != null) {
             webTarget = webTarget.queryParam("filter", filter);
         }
@@ -401,15 +404,6 @@ public class SmartDataAccessor {
         if (limit != null) {
             webTarget = webTarget.queryParam("size", limit);
         }
-        return fetchRecords(webTarget);
-    }
-
-    private WebTarget recordsTarget(String storage, String collection) {
-        return WebTargetCreator.createWebTarget(smartdataurl + "/smartdata", "records")
-                .path(collection).queryParam("storage", storage);
-    }
-
-    private JsonArray fetchRecords(WebTarget webTarget) throws SmartDataAccessorException {
         de.ngi.logging.Logger.log("Try get data over REST API...");
         // Note request URI for documentation
         this.smartdataRequest = webTarget.getUri().toString();
@@ -428,46 +422,6 @@ public class SmartDataAccessor {
                 return records;
             }
         }
-    }
-
-    public JsonObject fetchPythonScriptVersion(String storage, String collection, String scriptId, int version)
-            throws SmartDataAccessorException {
-        try (Connection con = getConnection()) {
-            if (con != null) {
-                String table = "\"" + storage.replace("\"", "\"\"") + "\".\"" + collection.replace("\"", "\"\"") + "\"";
-                String sql = "SELECT approved, \"scriptContent\" FROM " + table + " WHERE \"scriptId\" = ? AND version = ?";
-                try (PreparedStatement stmt = con.prepareStatement(sql)) {
-                    stmt.setString(1, scriptId);
-                    stmt.setInt(2, version);
-                    try (ResultSet row = stmt.executeQuery()) {
-                        if (!row.next()) {
-                            return null;
-                        }
-                        JsonObjectBuilder record = Json.createObjectBuilder().add("approved", row.getBoolean("approved"));
-                        String content = row.getString("scriptContent");
-                        if (content != null) {
-                            record.add("scriptContent", content);
-                        }
-                        return record.build();
-                    }
-                }
-            }
-        } catch (SQLException ex) {
-            throw new SmartDataAccessorException("Could not read Python script version: " + ex.getMessage());
-        }
-
-        WebTarget target = recordsTarget(storage, collection)
-                .queryParam("includes", "scriptId,version,approved,scriptContent")
-                .queryParam("filter", "scriptId,eq," + scriptId)
-                .queryParam("filter", "version,eq," + version)
-                .queryParam("size", 1);
-        for (JsonValue record : fetchRecords(target)) {
-            JsonObject row = record.asJsonObject();
-            if (scriptId.equals(row.getString("scriptId", null)) && row.getInt("version", -1) == version) {
-                return row;
-            }
-        }
-        return null;
     }
 
     /**
