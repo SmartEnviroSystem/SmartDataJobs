@@ -4,16 +4,19 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.sftp.SFTPClient;
-import net.schmizz.sshj.xfer.FileSystemFile;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Transfers an approved script to the configured Python host and returns its JSON stdout. */
 public class RemotePythonExecutor {
@@ -36,74 +39,96 @@ public class RemotePythonExecutor {
 
     public JsonObject execute(String scriptId, int version, String source,
             JsonObject input, long timeoutSeconds) throws Exception {
-        String runId = UUID.randomUUID().toString();
-        Path localScript = Files.createTempFile("smartdata-python-", ".py");
-        ExecutorService readers = Executors.newFixedThreadPool(2);
-        try {
-            Files.writeString(localScript, source, StandardCharsets.UTF_8);
-            String workdir = remoteWorkdir + "/" + runId;
-            String scriptName = scriptId + "_v" + version + ".py";
-            String remoteScript = workdir + "/" + scriptName;
-
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
+        ExecutorService workers = Executors.newFixedThreadPool(4);
+        AtomicReference<SSHClient> connection = new AtomicReference<>();
+        Future<JsonObject> run = workers.submit(() -> {
             try (SSHClient client = new SSHClient()) {
-                // Use the server user's ~/.ssh/known_hosts; never accept arbitrary host keys.
+                connection.set(client);
                 client.loadKnownHosts();
+                int remaining = remainingMillis(deadline);
+                client.setConnectTimeout(remaining);
+                client.setTimeout(remaining);
                 client.connect(host, port);
                 client.authPassword(user, password);
                 try (Session session = client.startSession()) {
-                    Session.Command mkdir = session.exec("mkdir -p " + quote(workdir));
-                    mkdir.join(15, TimeUnit.SECONDS);
-                    if (mkdir.getExitStatus() == null || mkdir.getExitStatus() != 0) {
-                        throw new IllegalStateException("Konnte Remote-Arbeitsverzeichnis nicht anlegen.");
-                    }
-                }
-                try (SFTPClient sftp = client.newSFTPClient()) {
-                    sftp.put(new FileSystemFile(localScript.toFile()), remoteScript);
-                }
-
-                try (Session session = client.startSession()) {
-                    String command = quote(python) + " -I -u " + quote(remoteScript);
-                    Session.Command process = session.exec(command);
-                    Future<String> stdout = readers.submit(() -> readBounded(process.getInputStream(), 4_000_000));
-                    Future<String> stderr = readers.submit(() -> readBounded(process.getErrorStream(), 256_000));
-                    try (OutputStream stdin = process.getOutputStream()) {
-                        stdin.write(input.toString().getBytes(StandardCharsets.UTF_8));
-                    }
-                    process.join(timeoutSeconds, TimeUnit.SECONDS);
-                    if (process.isOpen()) {
-                        process.close();
-                        throw new TimeoutException("Python-Skript hat das Zeitlimit überschritten.");
-                    }
-                    String out = stdout.get(5, TimeUnit.SECONDS).trim();
-                    String err = stderr.get(5, TimeUnit.SECONDS);
-                    Integer exit = process.getExitStatus();
-                    if (exit == null || exit != 0) {
-                        return Json.createObjectBuilder()
-                                .add("state", "failed")
-                                .add("error", Json.createObjectBuilder()
-                                        .add("code", "SCRIPT_EXIT_NONZERO")
-                                        .add("message", "Remote Python-Prozess fehlgeschlagen.")
-                                        .add("exitCode", exit == null ? -1 : exit)
-                                        .add("stderr", err.length() > 4000 ? err.substring(0, 4000) : err))
-                                .build();
-                    }
-                    try (var reader = Json.createReader(new java.io.StringReader(out))) {
-                        JsonObject parsed = reader.readObject();
-                        return Json.createObjectBuilder(parsed).add("state", "finished").build();
-                    }
-                } finally {
-                    try (Session cleanup = client.startSession()) {
-                        Session.Command cmd = cleanup.exec("rm -rf " + quote(workdir));
-                        cmd.join(10, TimeUnit.SECONDS);
-                    } catch (Exception ignored) {
-                        // Cleanup failure must not hide the execution result.
-                    }
+                    return runScript(session, workers, deadline, scriptId + "_v" + version + ".py", source, input);
                 }
             }
+        });
+        try {
+            return run.get(remainingMillis(deadline), TimeUnit.MILLISECONDS);
+        } catch (ExecutionException ex) {
+            if (ex.getCause() instanceof Exception cause) {
+                throw cause;
+            }
+            throw ex;
         } finally {
-            readers.shutdownNow();
-            Files.deleteIfExists(localScript);
+            run.cancel(true);
+            try {
+                // Unblock SSH reads and writes even if the peer stops responding.
+                SSHClient client = connection.get();
+                Socket socket = client == null ? null : client.getSocket();
+                if (socket != null) {
+                    socket.close();
+                }
+            } finally {
+                workers.shutdownNow();
+            }
         }
+    }
+
+    private JsonObject runScript(Session session, ExecutorService workers, long deadline, String scriptName,
+            String source, JsonObject input) throws Exception {
+        byte[] script = source.getBytes(StandardCharsets.UTF_8);
+        String launcher;
+        try (InputStream resource = RemotePythonExecutor.class.getResourceAsStream("python_runner.py")) {
+            if (resource == null) {
+                throw new IOException("Missing Python runner in deployment");
+            }
+            launcher = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        String command = "exec " + quote(python) + " -I -c " + quote(launcher) + " " + quote(remoteWorkdir)
+                + " " + quote(scriptName) + " " + script.length + " " + remainingMillis(deadline);
+        Session.Command process = session.exec(command);
+        Future<String> stdout = workers.submit(() -> readBounded(process.getInputStream(), 4_000_000));
+        Future<String> stderr = workers.submit(() -> readBounded(process.getErrorStream(), 256_000));
+        Future<?> writer = workers.submit(() -> {
+            try (OutputStream stdin = process.getOutputStream()) {
+                stdin.write(script);
+                stdin.write(input.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            return null;
+        });
+        process.join();
+        String out = stdout.get();
+        String err = stderr.get();
+        Integer exit = process.getExitStatus();
+        if (Integer.valueOf(124).equals(exit) && err.endsWith("\nSMARTDATA_SCRIPT_TIMEOUT\n")) {
+            throw new TimeoutException("Python script timeout");
+        }
+        if (exit == null || exit != 0) {
+            return Json.createObjectBuilder()
+                    .add("state", "failed")
+                    .add("error", Json.createObjectBuilder()
+                            .add("code", "SCRIPT_EXIT_NONZERO")
+                            .add("message", "Remote Python-Prozess fehlgeschlagen.")
+                            .add("exitCode", exit == null ? -1 : exit)
+                            .add("stderr", err.length() > 4000 ? err.substring(0, 4000) : err))
+                    .build();
+        }
+        writer.get();
+        try (var reader = Json.createReader(new java.io.StringReader(out))) {
+            return Json.createObjectBuilder(reader.readObject()).add("state", "finished").build();
+        }
+    }
+
+    private static int remainingMillis(long deadline) throws TimeoutException {
+        long nanos = deadline - System.nanoTime();
+        if (nanos <= 0 || Thread.currentThread().isInterrupted()) {
+            throw new TimeoutException("Python script timeout");
+        }
+        return (int) Math.max(1L, TimeUnit.NANOSECONDS.toMillis(nanos));
     }
 
     private static String quote(String value) {
@@ -113,11 +138,11 @@ public class RemotePythonExecutor {
     private static String readBounded(InputStream input, int maxBytes) throws Exception {
         try (input; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
-            int total = 0;
             int count;
             while ((count = input.read(buffer)) != -1) {
-                total += count;
-                if (total > maxBytes) throw new IllegalStateException("Remote-Prozessausgabe ist zu groß.");
+                if (out.size() + count > maxBytes) {
+                    throw new IllegalStateException("Remote-Prozessausgabe ist zu groß.");
+                }
                 out.write(buffer, 0, count);
             }
             return out.toString(StandardCharsets.UTF_8);

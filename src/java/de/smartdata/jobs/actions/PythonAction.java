@@ -11,6 +11,8 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeoutException;
 
 /** Executes Python script on the configured host */
 public class PythonAction extends Action {
@@ -131,6 +133,12 @@ public class PythonAction extends Action {
             return result.build();
         } catch (SmartDataAccessorException ex) {
             return failed(result, "SCRIPT_LOOKUP_FAILED", ex.getMessage());
+        } catch (TimeoutException | SocketTimeoutException ex) {
+            result.add("statemsg", "Python script timeout");
+            return failed(result, "SCRIPT_TIMEOUT", "Python-Skript hat das Zeitlimit überschritten.");
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return failed(result, "EXECUTION_INTERRUPTED", "Python-Ausführung wurde unterbrochen.");
         } catch (Exception ex) {
             return failed(result, "REMOTE_EXECUTION_FAILED", ex.getMessage());
         }

@@ -32,6 +32,7 @@ public class PythonResource {
             content = @Content(mediaType = MediaType.APPLICATION_JSON))
     @APIResponse(responseCode = "401", description = "SmartUser authentication required")
     @APIResponse(responseCode = "403", description = "Python execution permission required")
+    @APIResponse(responseCode = "504", description = "Python execution timed out")
     @APIResponse(responseCode = "502", description = "Remote execution failed",
             content = @Content(mediaType = MediaType.APPLICATION_JSON))
     public Response run(JsonObject request) {
@@ -51,6 +52,9 @@ public class PythonResource {
         String code = result.containsKey("error")
                 ? result.getJsonObject("error").getString("code", "REMOTE_EXECUTION_FAILED")
                 : "REMOTE_EXECUTION_FAILED";
+        if ("SCRIPT_TIMEOUT".equals(code)) {
+            return Response.status(Response.Status.GATEWAY_TIMEOUT).entity(result).build();
+        }
         if ("SCRIPT_NOT_FOUND".equals(code) || "SCRIPT_NOT_APPROVED".equals(code)
                 || "SCRIPT_EMPTY".equals(code)) {
             return Response.status(Response.Status.BAD_REQUEST).entity(result).build();
