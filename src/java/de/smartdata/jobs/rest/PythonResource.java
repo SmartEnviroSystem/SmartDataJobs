@@ -24,11 +24,11 @@ public class PythonResource {
     @SmartUserAuth
     @Path("/run")
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Run approved Python script",
-            description = "Runs an approved script version on the configured Python host.")
+    @Operation(summary = "Run an installed Python script",
+            description = "Runs an existing .py file selected by its relative scriptPath on the ML server. Input and output use JSON.")
     @APIResponse(responseCode = "200", description = "Script completed",
             content = @Content(mediaType = MediaType.APPLICATION_JSON))
-    @APIResponse(responseCode = "400", description = "Invalid request or script is not approved",
+    @APIResponse(responseCode = "400", description = "Invalid request or script file not found",
             content = @Content(mediaType = MediaType.APPLICATION_JSON))
     @APIResponse(responseCode = "401", description = "SmartUser authentication required")
     @APIResponse(responseCode = "403", description = "Python execution permission required")
@@ -55,8 +55,7 @@ public class PythonResource {
         if ("SCRIPT_TIMEOUT".equals(code)) {
             return Response.status(Response.Status.GATEWAY_TIMEOUT).entity(result).build();
         }
-        if ("SCRIPT_NOT_FOUND".equals(code) || "SCRIPT_NOT_APPROVED".equals(code)
-                || "SCRIPT_EMPTY".equals(code)) {
+        if ("SCRIPT_NOT_FOUND".equals(code)) {
             return Response.status(Response.Status.BAD_REQUEST).entity(result).build();
         }
         return Response.status(Response.Status.BAD_GATEWAY).entity(result).build();

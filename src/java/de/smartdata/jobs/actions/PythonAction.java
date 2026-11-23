@@ -2,8 +2,6 @@ package de.smartdata.jobs.actions;
 
 import de.smartdata.Remote.RemotePythonExecutor;
 import de.smartdata.jobs.config.Configuration;
-import de.smartdata.jobs.data.SmartDataAccessor;
-import de.smartdata.jobs.data.SmartDataAccessorException;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonNumber;
@@ -12,6 +10,7 @@ import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import java.net.SocketTimeoutException;
+import java.nio.file.NoSuchFileException;
 import java.util.concurrent.TimeoutException;
 
 /** Executes Python script on the configured host */
@@ -26,6 +25,7 @@ public class PythonAction extends Action {
 
     private String scriptId;
     private int scriptVersion;
+    private String scriptPath;
     private JsonObject scriptParams = Json.createObjectBuilder().build();
     private JsonValue input;
     private long timeoutSeconds = 300;
@@ -33,10 +33,12 @@ public class PythonAction extends Action {
     @Override
     public JsonArray getParamsDescription() {
         return Json.createArrayBuilder()
+                .add(Json.createObjectBuilder().add("name", "scriptPath").add("type", "string")
+                        .add("description", "Relativer Pfad einer vorhandenen .py-Datei im Skriptverzeichnis des ML-Servers. Alternativ scriptId und scriptVersion angeben.").add("optional", true))
                 .add(Json.createObjectBuilder().add("name", "scriptId").add("type", "string")
-                        .add("description", "ID des freigegebenen Python-Skripts").add("optional", false))
+                        .add("description", "Für bestehende Jobs: ID in der Datei <scriptId>_v<scriptVersion>.py").add("optional", true))
                 .add(Json.createObjectBuilder().add("name", "scriptVersion").add("type", "int")
-                        .add("description", "Unveränderliche Skriptversion").add("optional", false))
+                        .add("description", "Versionsnummer im Dateinamen, zusammen mit scriptId").add("optional", true))
                 .add(Json.createObjectBuilder().add("name", "parameters").add("type", "json")
                         .add("description", "Fachliche Parameter für das Skript").add("optional", true))
                 .add(Json.createObjectBuilder().add("name", "input").add("type", "json")
@@ -48,13 +50,32 @@ public class PythonAction extends Action {
 
     @Override
     public void setParams(JsonObject params) throws ActionConfigurationException {
-        if (params == null || !(params.get("scriptId") instanceof JsonString id)
-                || !id.getString().matches("[A-Za-z0-9_-]{1,100}")) {
-            throw new ActionConfigurationException("scriptId fehlt oder enthält ungültige Zeichen.");
+        if (params == null) {
+            throw new ActionConfigurationException("Skriptpfad fehlt.");
         }
-        int version = integerParam(params, "scriptVersion");
-        if (version < 1) {
-            throw new ActionConfigurationException("scriptVersion muss positiv sein.");
+        String path;
+        String id = null;
+        int version = 0;
+        if (params.containsKey("scriptPath")) {
+            if (params.containsKey("scriptId") || params.containsKey("scriptVersion")) {
+                throw new ActionConfigurationException("Nur scriptPath oder das Paar scriptId und scriptVersion angeben.");
+            }
+            if (!(params.get("scriptPath") instanceof JsonString file)
+                    || !RemotePythonExecutor.isScriptPath(file.getString())) {
+                throw new ActionConfigurationException("scriptPath muss ein relativer Pfad zu einer .py-Datei sein.");
+            }
+            path = file.getString();
+        } else {
+            if (!(params.get("scriptId") instanceof JsonString legacyId)
+                    || !legacyId.getString().matches("[A-Za-z0-9_-]{1,100}")) {
+                throw new ActionConfigurationException("scriptPath oder gültige scriptId mit scriptVersion angeben.");
+            }
+            id = legacyId.getString();
+            version = integerParam(params, "scriptVersion");
+            if (version < 1) {
+                throw new ActionConfigurationException("scriptVersion muss positiv sein.");
+            }
+            path = id + "_v" + version + ".py";
         }
         int timeout = params.containsKey("timeoutSeconds") ? integerParam(params, "timeoutSeconds") : 300;
         if (timeout < 1 || timeout > 3600) {
@@ -64,7 +85,8 @@ public class PythonAction extends Action {
         if (parameters != null && !(parameters instanceof JsonObject)) {
             throw new ActionConfigurationException("parameters muss ein JSON-Objekt sein.");
         }
-        scriptId = id.getString();
+        scriptPath = path;
+        scriptId = id;
         scriptVersion = version;
         timeoutSeconds = timeout;
         scriptParams = parameters == null ? JsonValue.EMPTY_JSON_OBJECT : parameters.asJsonObject();
@@ -84,27 +106,9 @@ public class PythonAction extends Action {
 
     @Override
     public JsonObject call() {
-        JsonObjectBuilder result = Json.createObjectBuilder()
-                .add("scriptId", scriptId)
-                .add("scriptVersion", scriptVersion);
+        JsonObjectBuilder result = scriptReference();
         try {
             Configuration config = new Configuration("SmartDataJobs");
-            String smartDataUrl = required(config, "python.smartdata.url");
-            String storage = valueOr(config, "python.scripts.storage", "public");
-            String collection = valueOr(config, "python.scripts.collection", "pythonscripts");
-
-            JsonObject scriptRecord = new SmartDataAccessor(smartDataUrl)
-                    .fetchPythonScriptVersion(storage, collection, scriptId, scriptVersion);
-            if (scriptRecord == null) {
-                return failed(result, "SCRIPT_NOT_FOUND", "Skriptversion wurde nicht gefunden.");
-            }
-            if (!scriptRecord.getBoolean("approved", false)) {
-                return failed(result, "SCRIPT_NOT_APPROVED", "Skriptversion ist nicht freigegeben.");
-            }
-            String content = scriptRecord.getString("scriptContent", null);
-            if (content == null || content.isBlank()) {
-                return failed(result, "SCRIPT_EMPTY", "Skriptinhalt fehlt.");
-            }
 
             JsonValue effectiveInput = input;
             if (effectiveInput == null) {
@@ -113,10 +117,8 @@ public class PythonAction extends Action {
             if (effectiveInput == null) {
                 effectiveInput = Json.createObjectBuilder().build();
             }
-            JsonObject payload = Json.createObjectBuilder()
+            JsonObject payload = scriptReference()
                     .add("contractVersion", 1)
-                    .add("scriptId", scriptId)
-                    .add("scriptVersion", scriptVersion)
                     .add("parameters", scriptParams)
                     .add("input", effectiveInput)
                     .build();
@@ -128,11 +130,11 @@ public class PythonAction extends Action {
                     Integer.parseInt(valueOr(config, "python.ssh.port", "22")),
                     required(config, "python.ssh.python"),
                     required(config, "python.ssh.remoteWorkdir"));
-            JsonObject remoteResult = executor.execute(scriptId, scriptVersion, content, payload, timeoutSeconds);
+            JsonObject remoteResult = executor.execute(scriptPath, payload, timeoutSeconds);
             remoteResult.forEach(result::add);
             return result.build();
-        } catch (SmartDataAccessorException ex) {
-            return failed(result, "SCRIPT_LOOKUP_FAILED", ex.getMessage());
+        } catch (NoSuchFileException ex) {
+            return failed(result, "SCRIPT_NOT_FOUND", "Skript im Verzeichnis des ML-Servers nicht gefunden.");
         } catch (TimeoutException | SocketTimeoutException ex) {
             result.add("statemsg", "Python script timeout");
             return failed(result, "SCRIPT_TIMEOUT", "Python-Skript hat das Zeitlimit überschritten.");
@@ -142,6 +144,13 @@ public class PythonAction extends Action {
         } catch (Exception ex) {
             return failed(result, "REMOTE_EXECUTION_FAILED", ex.getMessage());
         }
+    }
+
+    private JsonObjectBuilder scriptReference() {
+        if (scriptId != null) {
+            return Json.createObjectBuilder().add("scriptId", scriptId).add("scriptVersion", scriptVersion);
+        }
+        return Json.createObjectBuilder().add("scriptPath", scriptPath);
     }
 
     private static JsonObject failed(JsonObjectBuilder result, String code, String message) {

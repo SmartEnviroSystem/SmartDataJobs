@@ -4,12 +4,18 @@ import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
+import net.schmizz.sshj.connection.channel.direct.Signal;
+import net.schmizz.sshj.sftp.FileMode;
+import net.schmizz.sshj.sftp.Response.StatusCode;
+import net.schmizz.sshj.sftp.SFTPClient;
+import net.schmizz.sshj.sftp.SFTPException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Transfers an approved script to the configured Python host and returns its JSON stdout. */
+/** Executes a Python file already installed in the ML server's script directory. */
 public class RemotePythonExecutor {
     private final String user;
     private final String password;
@@ -37,11 +43,27 @@ public class RemotePythonExecutor {
         this.remoteWorkdir = remoteWorkdir;
     }
 
-    public JsonObject execute(String scriptId, int version, String source,
-            JsonObject input, long timeoutSeconds) throws Exception {
+    public static boolean isScriptPath(String path) {
+        if (path == null || !path.endsWith(".py") || path.contains("\\") || path.matches("^[A-Za-z]:.*")
+                || path.chars().anyMatch(Character::isISOControl)) {
+            return false;
+        }
+        for (String part : path.split("/", -1)) {
+            if (part.isEmpty() || part.equals(".") || part.equals("..")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public JsonObject execute(String scriptPath, JsonObject input, long timeoutSeconds) throws Exception {
+        if (!isScriptPath(scriptPath)) {
+            throw new IllegalArgumentException("Expected a relative Python script path");
+        }
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
-        ExecutorService workers = Executors.newFixedThreadPool(4);
+        ExecutorService workers = Executors.newCachedThreadPool();
         AtomicReference<SSHClient> connection = new AtomicReference<>();
+        AtomicReference<RunningProcess> active = new AtomicReference<>();
         Future<JsonObject> run = workers.submit(() -> {
             try (SSHClient client = new SSHClient()) {
                 connection.set(client);
@@ -51,13 +73,49 @@ public class RemotePythonExecutor {
                 client.setTimeout(remaining);
                 client.connect(host, port);
                 client.authPassword(user, password);
+                String file = resolveScript(client, scriptPath);
+                boolean nativeTimeout;
+                try (Session probe = client.startSession()) {
+                    Session.Command check = probe.exec("command -v timeout >/dev/null 2>&1");
+                    check.join();
+                    nativeTimeout = Integer.valueOf(0).equals(check.getExitStatus());
+                }
                 try (Session session = client.startSession()) {
-                    return runScript(session, workers, deadline, scriptId + "_v" + version + ".py", source, input);
+                    String command = quote(python) + " -B -u -- " + quote(file);
+                    int remainingMs = remainingMillis(deadline);
+                    if (nativeTimeout) {
+                        long seconds = (remainingMs + 999L) / 1000;
+                        command = "timeout -k 1 " + seconds + " " + command;
+                    }
+                    String cwd = remoteWorkdir.startsWith("/") ? remoteWorkdir : "./" + remoteWorkdir;
+                    Session.Command process = session.exec("cd " + quote(cwd) + " && exec " + command);
+                    RunningProcess running = new RunningProcess(process, nativeTimeout);
+                    active.set(running);
+                    if (Thread.currentThread().isInterrupted() || System.nanoTime() >= deadline) {
+                        running.stop();
+                        throw new TimeoutException("Python script timeout");
+                    }
+                    return exchangeJson(process, workers, input);
                 }
             }
         });
         try {
             return run.get(remainingMillis(deadline), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException | InterruptedException ex) {
+            RunningProcess running = active.get();
+            if (running != null) {
+                // SSH signal delivery is best effort. Bound the wait even when the network is down.
+                Future<?> stop = workers.submit(() -> {
+                    running.stop();
+                    return null;
+                });
+                try {
+                    stop.get(200, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException | ExecutionException ignored) {
+                    // Closing the connection below also terminates the local SSH session.
+                }
+            }
+            throw ex;
         } catch (ExecutionException ex) {
             if (ex.getCause() instanceof Exception cause) {
                 throw cause;
@@ -78,24 +136,41 @@ public class RemotePythonExecutor {
         }
     }
 
-    private JsonObject runScript(Session session, ExecutorService workers, long deadline, String scriptName,
-            String source, JsonObject input) throws Exception {
-        byte[] script = source.getBytes(StandardCharsets.UTF_8);
-        String launcher;
-        try (InputStream resource = RemotePythonExecutor.class.getResourceAsStream("python_runner.py")) {
-            if (resource == null) {
-                throw new IOException("Missing Python runner in deployment");
-            }
-            launcher = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+    private record RunningProcess(Session.Command command, boolean supervised) {
+        void stop() throws IOException {
+            // Let the host's timeout utility forward TERM and escalate to its process group.
+            command.signal(supervised ? Signal.TERM : Signal.KILL);
         }
-        String command = "exec " + quote(python) + " -I -c " + quote(launcher) + " " + quote(remoteWorkdir)
-                + " " + quote(scriptName) + " " + script.length + " " + remainingMillis(deadline);
-        Session.Command process = session.exec(command);
+    }
+
+    private String resolveScript(SSHClient client, String path) throws IOException {
+        try (SFTPClient sftp = client.newSFTPClient()) {
+            String root = sftp.canonicalize(remoteWorkdir);
+            if (sftp.stat(root).getType() != FileMode.Type.DIRECTORY) {
+                throw new IOException("Configured ML script directory is not a directory");
+            }
+            String prefix = root.endsWith("/") ? root : root + "/";
+            try {
+                String file = sftp.canonicalize(prefix + path);
+                if (!file.startsWith(prefix) || !file.endsWith(".py")
+                        || sftp.stat(file).getType() != FileMode.Type.REGULAR) {
+                    throw new NoSuchFileException(path);
+                }
+                return file;
+            } catch (SFTPException ex) {
+                if (ex.getStatusCode() == StatusCode.NO_SUCH_FILE || ex.getStatusCode() == StatusCode.NO_SUCH_PATH) {
+                    throw new NoSuchFileException(path);
+                }
+                throw ex;
+            }
+        }
+    }
+
+    private JsonObject exchangeJson(Session.Command process, ExecutorService workers, JsonObject input) throws Exception {
         Future<String> stdout = workers.submit(() -> readBounded(process.getInputStream(), 4_000_000));
         Future<String> stderr = workers.submit(() -> readBounded(process.getErrorStream(), 256_000));
         Future<?> writer = workers.submit(() -> {
             try (OutputStream stdin = process.getOutputStream()) {
-                stdin.write(script);
                 stdin.write(input.toString().getBytes(StandardCharsets.UTF_8));
             }
             return null;
@@ -104,9 +179,6 @@ public class RemotePythonExecutor {
         String out = stdout.get();
         String err = stderr.get();
         Integer exit = process.getExitStatus();
-        if (Integer.valueOf(124).equals(exit) && err.endsWith("\nSMARTDATA_SCRIPT_TIMEOUT\n")) {
-            throw new TimeoutException("Python script timeout");
-        }
         if (exit == null || exit != 0) {
             return Json.createObjectBuilder()
                     .add("state", "failed")
