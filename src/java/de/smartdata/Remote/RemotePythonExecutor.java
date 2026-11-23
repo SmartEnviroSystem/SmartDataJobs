@@ -44,12 +44,12 @@ public class RemotePythonExecutor {
     }
 
     public static boolean isScriptPath(String path) {
-        if (path == null || !path.endsWith(".py") || path.contains("\\") || path.matches("^[A-Za-z]:.*")
+        if (path == null || !path.endsWith(".py") || path.startsWith("/") || path.contains("\\") || path.matches("^[A-Za-z]:.*")
                 || path.chars().anyMatch(Character::isISOControl)) {
             return false;
         }
         for (String part : path.split("/", -1)) {
-            if (part.isEmpty() || part.equals(".") || part.equals("..")) {
+            if (part.equals("..")) {
                 return false;
             }
         }
@@ -73,30 +73,7 @@ public class RemotePythonExecutor {
                 client.setTimeout(remaining);
                 client.connect(host, port);
                 client.authPassword(user, password);
-                String file = resolveScript(client, scriptPath);
-                boolean nativeTimeout;
-                try (Session probe = client.startSession()) {
-                    Session.Command check = probe.exec("command -v timeout >/dev/null 2>&1");
-                    check.join();
-                    nativeTimeout = Integer.valueOf(0).equals(check.getExitStatus());
-                }
-                try (Session session = client.startSession()) {
-                    String command = quote(python) + " -B -u -- " + quote(file);
-                    int remainingMs = remainingMillis(deadline);
-                    if (nativeTimeout) {
-                        long seconds = (remainingMs + 999L) / 1000;
-                        command = "timeout -k 1 " + seconds + " " + command;
-                    }
-                    String cwd = remoteWorkdir.startsWith("/") ? remoteWorkdir : "./" + remoteWorkdir;
-                    Session.Command process = session.exec("cd " + quote(cwd) + " && exec " + command);
-                    RunningProcess running = new RunningProcess(process, nativeTimeout);
-                    active.set(running);
-                    if (Thread.currentThread().isInterrupted() || System.nanoTime() >= deadline) {
-                        running.stop();
-                        throw new TimeoutException("Python script timeout");
-                    }
-                    return exchangeJson(process, workers, input);
-                }
+                return runInstalledScript(client, workers, active, deadline, scriptPath, input);
             }
         });
         try {
@@ -133,6 +110,34 @@ public class RemotePythonExecutor {
             } finally {
                 workers.shutdownNow();
             }
+        }
+    }
+
+    private JsonObject runInstalledScript(SSHClient client, ExecutorService workers,
+            AtomicReference<RunningProcess> active, long deadline, String scriptPath, JsonObject input) throws Exception {
+        String file = resolveScript(client, scriptPath);
+        boolean nativeTimeout;
+        try (Session probe = client.startSession()) {
+            Session.Command check = probe.exec("command -v timeout >/dev/null 2>&1");
+            check.join();
+            nativeTimeout = Integer.valueOf(0).equals(check.getExitStatus());
+        }
+        try (Session session = client.startSession()) {
+            String command = quote(python) + " -B -u -- " + quote(file);
+            int remainingMs = remainingMillis(deadline);
+            if (nativeTimeout) {
+                long seconds = (remainingMs + 999L) / 1000;
+                command = "timeout -k 1 " + seconds + " " + command;
+            }
+            String cwd = remoteWorkdir.startsWith("/") ? remoteWorkdir : "./" + remoteWorkdir;
+            Session.Command process = session.exec("cd " + quote(cwd) + " && exec " + command);
+            RunningProcess running = new RunningProcess(process, nativeTimeout);
+            active.set(running);
+            if (Thread.currentThread().isInterrupted() || System.nanoTime() >= deadline) {
+                running.stop();
+                throw new TimeoutException("Python script timeout");
+            }
+            return exchangeJson(process, workers, input);
         }
     }
 
