@@ -384,10 +384,7 @@ public class SmartDataAccessor {
         result.add("storeMethod", "SmartDataAccessor/REST-API connection");
 
         // Get information about file from SmartData
-        WebTarget webTarget = WebTargetCreator.createWebTarget(
-                smartdataurl + "/smartdata", "records")
-                .path(collection)
-                .queryParam("storage", storage);
+        WebTarget webTarget = recordsTarget(storage, collection);
         if (filter != null) {
             webTarget = webTarget.queryParam("filter", filter);
         }
@@ -404,24 +401,71 @@ public class SmartDataAccessor {
         if (limit != null) {
             webTarget = webTarget.queryParam("size", limit);
         }
+        return fetchRecords(webTarget);
+    }
+
+    private WebTarget recordsTarget(String storage, String collection) {
+        return WebTargetCreator.createWebTarget(smartdataurl + "/smartdata", "records")
+                .path(collection).queryParam("storage", storage);
+    }
+
+    private JsonArray fetchRecords(WebTarget webTarget) throws SmartDataAccessorException {
         de.ngi.logging.Logger.log("Try get data over REST API...");
         // Note request URI for documentation
         this.smartdataRequest = webTarget.getUri().toString();
-        Response response = webTarget.request(MediaType.APPLICATION_JSON).get();
-        String responseText = response.readEntity(String.class);
-        if (Response.Status.OK.getStatusCode() == response.getStatus()) {
-            JsonParser parser = Json.createParser(new StringReader(responseText));
-            parser.next();
-            JsonArray records = parser.getObject().getJsonArray("records");
-            if (records == null) {
-                throw new SmartDataAccessorException("Could not get data from >" + webTarget.getUri() + "< retuned no >records<");
+        try (Response response = webTarget.request(MediaType.APPLICATION_JSON).get()) {
+            if (response.getStatus() == 404) {
+                throw new SmartDataAccessorException("Target >" + webTarget.getUri() + "< was not found.: ");
             }
-            return records;
-        } else if (response.getStatus() == 404) {
-            throw new SmartDataAccessorException("Target >" + webTarget.getUri() + "< was not found.: ");
-        } else {
-            throw new SmartDataAccessorException("Could not access >" + webTarget.getUri() + "< returned status: " + response.getStatus());
+            if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+                throw new SmartDataAccessorException("Could not access >" + webTarget.getUri() + "< returned status: " + response.getStatus());
+            }
+            try (var reader = Json.createReader(new StringReader(response.readEntity(String.class)))) {
+                JsonArray records = reader.readObject().getJsonArray("records");
+                if (records == null) {
+                    throw new SmartDataAccessorException("Could not get data from >" + webTarget.getUri() + "< retuned no >records<");
+                }
+                return records;
+            }
         }
+    }
+
+    public JsonObject fetchPythonScriptVersion(String storage, String collection, String scriptId, int version)
+            throws SmartDataAccessorException {
+        try (Connection con = getConnection()) {
+            if (con != null) {
+                String table = "\"" + storage.replace("\"", "\"\"") + "\".\"" + collection.replace("\"", "\"\"") + "\"";
+                String sql = "SELECT approved, \"scriptContent\" FROM " + table + " WHERE \"scriptId\" = ? AND version = ?";
+                try (PreparedStatement stmt = con.prepareStatement(sql)) {
+                    stmt.setString(1, scriptId);
+                    stmt.setInt(2, version);
+                    try (ResultSet row = stmt.executeQuery()) {
+                        if (!row.next()) {
+                            return null;
+                        }
+                        JsonObjectBuilder record = Json.createObjectBuilder().add("approved", row.getBoolean("approved"));
+                        String content = row.getString("scriptContent");
+                        if (content != null) {
+                            record.add("scriptContent", content);
+                        }
+                        return record.build();
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            throw new SmartDataAccessorException("Could not read Python script version: " + ex.getMessage());
+        }
+
+        WebTarget target = recordsTarget(storage, collection)
+                .queryParam("includes", "scriptId,version,approved,scriptContent")
+                .queryParam("filter", "scriptId,eq," + scriptId)
+                .queryParam("size", 100);
+        for (JsonValue record : fetchRecords(target)) {
+            if (record.asJsonObject().getInt("version", -1) == version) {
+                return record.asJsonObject();
+            }
+        }
+        return null;
     }
 
     /**

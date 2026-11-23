@@ -74,18 +74,8 @@ public class PythonAction extends Action {
             String storage = valueOr(config, "python.scripts.storage", "public");
             String collection = valueOr(config, "python.scripts.collection", "pythonscripts");
 
-            JsonObjectBuilder fetchInfo = Json.createObjectBuilder();
-            JsonArray matches = new SmartDataAccessor(smartDataUrl).fetchData(
-                    storage, collection, "scriptId,version,approved,scriptContent",
-                    "scriptId,eq," + scriptId, null, null, null, null, 100L, fetchInfo);
-            JsonObject scriptRecord = null;
-            for (JsonValue value : matches) {
-                JsonObject row = value.asJsonObject();
-                if (row.getInt("version", -1) == scriptVersion) {
-                    scriptRecord = row;
-                    break;
-                }
-            }
+            JsonObject scriptRecord = new SmartDataAccessor(smartDataUrl)
+                    .fetchPythonScriptVersion(storage, collection, scriptId, scriptVersion);
             if (scriptRecord == null) {
                 return failed(result, "SCRIPT_NOT_FOUND", "Skriptversion wurde nicht gefunden.");
             }
