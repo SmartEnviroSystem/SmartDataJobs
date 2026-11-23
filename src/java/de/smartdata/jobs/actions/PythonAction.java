@@ -6,8 +6,10 @@ import de.smartdata.jobs.data.SmartDataAccessor;
 import de.smartdata.jobs.data.SmartDataAccessorException;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 
 /** Executes Python script on the configured host */
@@ -44,30 +46,38 @@ public class PythonAction extends Action {
 
     @Override
     public void setParams(JsonObject params) throws ActionConfigurationException {
-        scriptId = params.getString("scriptId", null);
-        if (scriptId == null || !scriptId.matches("[A-Za-z0-9_-]{1,100}")) {
+        if (params == null || !(params.get("scriptId") instanceof JsonString id)
+                || !id.getString().matches("[A-Za-z0-9_-]{1,100}")) {
             throw new ActionConfigurationException("scriptId fehlt oder enthält ungültige Zeichen.");
         }
-        if (!params.containsKey("scriptVersion") || params.getJsonNumber("scriptVersion") == null) {
-            throw new ActionConfigurationException("scriptVersion fehlt.");
-        }
-        scriptVersion = params.getInt("scriptVersion");
-        if (scriptVersion < 1) {
+        int version = integerParam(params, "scriptVersion");
+        if (version < 1) {
             throw new ActionConfigurationException("scriptVersion muss positiv sein.");
         }
-        if (params.containsKey("parameters")) {
-            if (params.get("parameters").getValueType() != JsonValue.ValueType.OBJECT) {
-                throw new ActionConfigurationException("parameters muss ein JSON-Objekt sein.");
-            }
-            scriptParams = params.getJsonObject("parameters");
-        }
-        input = params.get("input");
-        if (params.containsKey("timeoutSeconds")) {
-            timeoutSeconds = params.getInt("timeoutSeconds");
-        }
-        if (timeoutSeconds < 1 || timeoutSeconds > 3600) {
+        int timeout = params.containsKey("timeoutSeconds") ? integerParam(params, "timeoutSeconds") : 300;
+        if (timeout < 1 || timeout > 3600) {
             throw new ActionConfigurationException("timeoutSeconds muss zwischen 1 und 3600 liegen.");
         }
+        JsonValue parameters = params.get("parameters");
+        if (parameters != null && !(parameters instanceof JsonObject)) {
+            throw new ActionConfigurationException("parameters muss ein JSON-Objekt sein.");
+        }
+        scriptId = id.getString();
+        scriptVersion = version;
+        timeoutSeconds = timeout;
+        scriptParams = parameters == null ? JsonValue.EMPTY_JSON_OBJECT : parameters.asJsonObject();
+        input = params.get("input");
+    }
+
+    private static int integerParam(JsonObject params, String key) throws ActionConfigurationException {
+        if (params.get(key) instanceof JsonNumber number) {
+            try {
+                return number.intValueExact();
+            } catch (ArithmeticException ex) {
+                throw new ActionConfigurationException(key + " muss eine ganze 32-Bit-Zahl sein.");
+            }
+        }
+        throw new ActionConfigurationException(key + " fehlt oder ist keine Zahl.");
     }
 
     @Override
