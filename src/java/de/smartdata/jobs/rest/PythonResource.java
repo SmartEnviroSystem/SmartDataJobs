@@ -1,5 +1,6 @@
 package de.smartdata.jobs.rest;
 
+import de.fhbielefeld.smartuser.annotations.SmartUserAuth;
 import de.smartdata.jobs.actions.ActionConfigurationException;
 import de.smartdata.jobs.actions.PythonAction;
 import jakarta.json.Json;
@@ -20,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 public class PythonResource {
 
     @POST
+    @SmartUserAuth
     @Path("/run")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Run approved Python script",
@@ -28,6 +30,8 @@ public class PythonResource {
             content = @Content(mediaType = MediaType.APPLICATION_JSON))
     @APIResponse(responseCode = "400", description = "Invalid request or script is not approved",
             content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    @APIResponse(responseCode = "401", description = "SmartUser authentication required")
+    @APIResponse(responseCode = "403", description = "Python execution permission required")
     @APIResponse(responseCode = "502", description = "Remote execution failed",
             content = @Content(mediaType = MediaType.APPLICATION_JSON))
     public Response run(JsonObject request) {
