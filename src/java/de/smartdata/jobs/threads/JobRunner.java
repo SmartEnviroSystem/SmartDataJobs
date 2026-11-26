@@ -1262,18 +1262,23 @@ public class JobRunner {
         if (!haserror) {
             return null;
         }
+        // CheckNet reports the status under recivedStatusCode; the network
+        // actions ReadData/WriteData use httpStatus.
+        int httpStatus = -1;
+        if (result.containsKey("httpStatus")) {
+            httpStatus = result.getJsonNumber("httpStatus").intValue();
+        } else if (result.containsKey("recivedStatusCode")) {
+            httpStatus = result.getJsonNumber("recivedStatusCode").intValue();
+        }
         String msg = statemsg != null ? statemsg.toLowerCase() : "";
         if (msg.contains("timeout")) {
             return "timeout";
         }
-        if (result.containsKey("httpStatus")) {
-            int httpStatus = result.getJsonNumber("httpStatus").intValue();
-            if (httpStatus >= 400 && httpStatus < 500) {
-                return "http_4xx";
-            }
-            if (httpStatus >= 500) {
-                return "http_5xx";
-            }
+        if (httpStatus >= 400 && httpStatus < 500) {
+            return "http_4xx";
+        }
+        if (httpStatus >= 500) {
+            return "http_5xx";
         }
         if (msg.contains("dns") || msg.contains("connect") || msg.contains("unreachable") || msg.contains("unknownhost")) {
             return "network";
