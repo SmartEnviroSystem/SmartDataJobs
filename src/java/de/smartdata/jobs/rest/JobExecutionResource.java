@@ -56,6 +56,78 @@ public class JobExecutionResource {
     }
 
     @GET
+    @Path("/replay")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "replay (dry run)",
+            description = "Builds the replay plan for one chain run without executing anything. "
+            + "Determines the resume point (first run not finished/replayed, or the explicitly given fromrunid) "
+            + "and lists for every run of the chain run whether a resume would re-execute or skip it. "
+            + "The actual replay execution is not part of this endpoint; the plan is read-only.")
+    @APIResponse(
+            responseCode = "200",
+            description = "Replay plan for the chain run",
+            content = @Content(
+                    mediaType = "application/json",
+                    example = "{\"plan\": {\"chainrunid\": \"…\", \"resumePointRunId\": \"…\", \"plan\": [{\"runid\": \"…\", \"step\": 1, \"action\": \"re-execute\"}]}"
+            ))
+    @APIResponse(
+            responseCode = "400",
+            description = "Invalid uuid or missing parameter",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\": [\"Parameter chainrunid is missing.\"]}"))
+    @APIResponse(
+            responseCode = "500",
+            description = "Error message",
+            content = @Content(mediaType = "application/json",
+                    example = "{\"errors\": [\"Could not build replay plan: Because of …\"]}"))
+    public Response replay(
+            @Parameter(description = "URL to smartdata instance") @QueryParam("smartdataurl") String smartdataurl,
+            @Parameter(description = "Collection name where tasks are defined") @QueryParam("collection") String collection,
+            @Parameter(description = "Storage name where tasks are defined") @QueryParam("storage") String storage,
+            @Parameter(description = "Chain run to build the replay plan for (uuid)", required = true) @QueryParam("chainrunid") String chainrunid,
+            @Parameter(description = "Optional run id (uuid) to resume from; default: first run not finished/replayed") @QueryParam("fromrunid") String fromrunid,
+            @Parameter(description = "Currently only dry run (true) is supported; the parameter exists so the API shape matches the planned execute mode", example = "true") @QueryParam("dryrun") String dryrun) {
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        if (chainrunid == null || chainrunid.isBlank()) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("Parameter chainrunid is missing.");
+            return rob.toResponse();
+        }
+        if (smartdataurl == null) {
+            smartdataurl = "http://localhost:8080/SmartData";
+        }
+        if (smartdataurl.startsWith("/")) {
+            smartdataurl = "http://localhost:8080" + smartdataurl;
+        }
+        if (collection == null) {
+            collection = "datajobs";
+        }
+        if (storage == null) {
+            storage = "public";
+        }
+        java.util.UUID chainrunUuid;
+        java.util.UUID fromrunUuid = null;
+        try {
+            chainrunUuid = java.util.UUID.fromString(chainrunid.trim());
+            if (fromrunid != null && !fromrunid.isBlank()) {
+                fromrunUuid = java.util.UUID.fromString(fromrunid.trim());
+            }
+        } catch (IllegalArgumentException iex) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("Parameter is not a valid uuid: " + iex.getMessage());
+            return rob.toResponse();
+        }
+        try {
+            rob.add("plan", jobrunner.replayPlan(smartdataurl, collection, storage, chainrunUuid, fromrunUuid));
+            rob.setStatus(Response.Status.OK);
+        } catch (JobRunnerException jrex) {
+            rob.addException(jrex);
+            rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return rob.toResponse();
+    }
+
+    @GET
     @Path("/startAll")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "startAll",

@@ -566,6 +566,173 @@ public class SmartDataAccessor {
     }
 
     /**
+     * Saves a job run to datajobs_log including the replay/resume bookkeeping
+     * columns (replay-fields.md §3.2): runid, chainrunid, parentrunid, step,
+     * runstate, input snapshot + inputhash, errorclass, attempt,
+     * resultvaliduntil, durationms.
+     *
+     * Uses the configured storage, not a hard-coded schema: reads go through
+     * storage passed to fetchData(), so writes must use the same schema,
+     * otherwise lineage queries and log writes hit different tables when the
+     * deployment uses another storage than the built-in default.
+     *
+     * @param storage Storage (PostgreSQL schema) holding datajobs_log
+     * @param datajob_id Job definition id
+     * @param result Action result
+     * @param run Run bookkeeping; may be null (writes only the classic
+     * columns)
+     * @param haserror Error flag for the denormalised iserror column
+     * @param wastimeout Timeout flag for the denormalised wastimeout column
+     * @throws SmartDataAccessorException
+     */
+    public void saveRunLog(String storage, Long datajob_id, JsonObject result, RunRecord run, boolean haserror, boolean wastimeout) throws SmartDataAccessorException {
+        de.ngi.logging.Logger.log("saveRunLog()");
+        if (run == null) {
+            // Without run bookkeeping fall back to the classic five columns;
+            // step/attempt/resultreused are NOT NULL with defaults, explicit
+            // NULLs would violate them.
+            this.saveDataSpecial(this.smartdataurl, "datajobs_log", storage, datajob_id, result, haserror, wastimeout);
+            return;
+        }
+        Connection con = this.getConnection();
+        if (con == null) {
+            de.ngi.logging.Logger.log("Could not save dataset, no connection available.");
+            return;
+        }
+        String insertQuery = "INSERT INTO " + storage + ".datajobs_log "
+                + "(datajob_id, result, iserror, wastimeout, ts, "
+                + "runid, chainrunid, parentrunid, step, runstate, "
+                + "input, inputhash, errorclass, attempt, replayofrunid, "
+                + "replayreason, resultvaliduntil, durationms) "
+                + "VALUES (?, ?, ?, ?, now(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = con.prepareStatement(insertQuery)) {
+            int i = 1;
+            pstmt.setLong(i++, datajob_id);
+            pstmt.setString(i++, result.toString());
+            pstmt.setBoolean(i++, haserror);
+            pstmt.setBoolean(i++, wastimeout);
+            if (run != null) {
+                setObjectOrNull(pstmt, i++, run.getRunid());
+                setObjectOrNull(pstmt, i++, run.getChainrunid());
+                setObjectOrNull(pstmt, i++, run.getParentrunid());
+                pstmt.setInt(i++, run.getStep());
+                pstmt.setString(i++, run.getRunstate());
+                pstmt.setString(i++, run.getInput());
+                pstmt.setString(i++, run.getInputhash());
+                pstmt.setString(i++, run.getErrorclass());
+                pstmt.setInt(i++, run.getAttempt());
+                setObjectOrNull(pstmt, i++, run.getReplayofrunid());
+                pstmt.setString(i++, run.getReplayreason());
+                if (run.getResultvaliduntil() != null) {
+                    pstmt.setObject(i++, run.getResultvaliduntil());
+                } else {
+                    pstmt.setNull(i++, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+                }
+                if (run.getDurationms() >= 0) {
+                    pstmt.setLong(i++, run.getDurationms());
+                } else {
+                    pstmt.setNull(i++, java.sql.Types.BIGINT);
+                }
+            }
+            int rowsInserted = pstmt.executeUpdate();
+            if (rowsInserted > 0) {
+                de.ngi.logging.Logger.log("Successfully added dataset");
+            } else {
+                de.ngi.logging.Logger.log("No new dataset created");
+            }
+        } catch (SQLException ex) {
+            de.ngi.logging.Logger.log("Error saveing in database: " + ex.getLocalizedMessage());
+            ex.printStackTrace();
+            throw new SmartDataAccessorException("Could not create new dataset: " + ex.getLocalizedMessage());
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                throw new SmartDataAccessorException("Could not close db connection. Possible memory leak." + ex.getLocalizedMessage());
+            }
+        }
+    }
+
+    /**
+     * Sets a java object (e.g. UUID) on a prepared statement, or NULL when the
+     * object is null.
+     */
+    private void setObjectOrNull(PreparedStatement pstmt, int index, Object value) throws SQLException {
+        if (value != null) {
+            pstmt.setObject(index, value);
+        } else {
+            pstmt.setNull(index, java.sql.Types.NULL);
+        }
+    }
+
+    /**
+     * Fetches all log rows (runs) of one chain run ordered by step ascending.
+     * Used for the replay plan and for chain depth guards.
+     *
+     * @param storage Storage holding datajobs_log
+     * @param chainrunid Chain run identity
+     * @return JsonArray of run records (datajobs_log rows), ordered by step
+     * @throws SmartDataAccessorException
+     */
+    public JsonArray fetchRunsOfChain(String storage, java.util.UUID chainrunid) throws SmartDataAccessorException {
+        de.ngi.logging.Logger.log("fetchRunsOfChain()");
+        Connection con = this.getConnection();
+        if (con == null) {
+            throw new SmartDataAccessorException("Could not fetch runs: no direct database connection available.");
+        }
+        String sql = "SELECT * FROM " + storage + ".datajobs_log WHERE chainrunid = ? ORDER BY step ASC, id ASC";
+        JsonArrayBuilder runs = Json.createArrayBuilder();
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            pstmt.setObject(1, chainrunid);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    runs.add(this.resultSetRowToJson(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            throw new SmartDataAccessorException("Could not fetch runs of chain >" + chainrunid + "<: " + ex.getLocalizedMessage());
+        } finally {
+            try {
+                con.close();
+            } catch (SQLException ex) {
+                throw new SmartDataAccessorException("Could not close db connection. Possible memory leak." + ex.getLocalizedMessage());
+            }
+        }
+        return runs.build();
+    }
+
+    /**
+     * Converts the current row of a ResultSet into a JsonObject. Uses
+     * getObject() plus string conversion so uuid, timestamptz and all basic
+     * types serialize uniformly; null columns are omitted.
+     */
+    private JsonObject resultSetRowToJson(ResultSet rs) throws SQLException {
+        JsonObjectBuilder row = Json.createObjectBuilder();
+        java.sql.ResultSetMetaData rsmd = rs.getMetaData();
+        for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+            String colname = rsmd.getColumnName(i);
+            Object val = rs.getObject(i);
+            if (val == null) {
+                continue;
+            }
+            if (val instanceof Boolean) {
+                row.add(colname, (Boolean) val);
+            } else if (val instanceof Integer) {
+                row.add(colname, (Integer) val);
+            } else if (val instanceof Long) {
+                row.add(colname, (Long) val);
+            } else if (val instanceof java.sql.Timestamp) {
+                row.add(colname, ((java.sql.Timestamp) val).toInstant().toString());
+            } else if (val instanceof java.sql.Date) {
+                row.add(colname, val.toString());
+            } else {
+                row.add(colname, val.toString());
+            }
+        }
+        return row.build();
+    }
+
+    /**
      * Saves data to the SmartData API uses direct database access if
      * avaialable, otherwise it uses the specified SmartData REST-API
      *
